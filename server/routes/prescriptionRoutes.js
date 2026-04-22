@@ -5,7 +5,7 @@ const { protect } = require('../middleware/auth');
 const { GoogleGenAI } = require('@google/genai');
 
 // Initialize Gemini SDK
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+const genAI = new GoogleGenAI(process.env.GEMINI_API_KEY);
 
 // Get all prescriptions for a patient
 router.get('/', protect(['patient', 'doctor', 'admin']), async (req, res) => {
@@ -100,15 +100,16 @@ router.post('/:id/analyze', protect(['patient', 'doctor']), async (req, res) => 
       Keep it encouraging and very clear.
     `;
 
-    const result = await ai.models.generateContent({
-      model: "gemini-2.0-flash",
-      contents: prompt,
-      generationConfig: {
-        responseMimeType: "application/json"
-      }
+    const model = genAI.getGenerativeModel({ 
+        model: "gemini-2.0-flash",
+        generationConfig: { responseMimeType: "application/json" }
     });
 
-    res.json(JSON.parse(result.text));
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const text = response.text();
+
+    res.json(JSON.parse(text));
   } catch (error) {
     console.error("Prescription Analysis Error:", error);
     res.status(500).json({ message: "Failed to analyze prescription.", error: error.message });

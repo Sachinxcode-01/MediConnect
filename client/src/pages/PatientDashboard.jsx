@@ -1,10 +1,12 @@
-import React, { useContext, useState, useEffect } from 'react';
+import React, { useContext, useState, useEffect, useRef } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { Link } from 'react-router-dom';
-import { Activity, Clock, FileText, HeartPulse, LogOut, Map, Video, Database, MapPin, Sparkles, Loader2, X, AlertTriangle } from 'lucide-react';
+import { Activity, Clock, FileText, HeartPulse, LogOut, Map, Video, Database, MapPin, Sparkles, Loader2, X, AlertTriangle, Mic, MicOff } from 'lucide-react';
 import api from '../api/axios';
 import toast from 'react-hot-toast';
 import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import PharmacyFinder from '../components/PharmacyFinder';
+import AINurseCall from '../components/AINurseCall';
 import { io } from 'socket.io-client';
 import { motion, AnimatePresence } from 'framer-motion';
 import DashboardSidebar from '../components/DashboardSidebar';
@@ -13,6 +15,8 @@ const PatientDashboard = () => {
   const { user, logout } = useContext(AuthContext);
   const [activeTab, setActiveTab] = useState('overview');
   const [symptoms, setSymptoms] = useState('');
+  const [isListening, setIsListening] = useState(false);
+  const recognitionRef = useRef(null);
   const [triageRes, setTriageRes] = useState(null);
   const [vitals, setVitals] = useState([]);
   const [pharmacies, setPharmacies] = useState([]);
@@ -114,6 +118,13 @@ const PatientDashboard = () => {
       };
       fetchReport();
     }
+
+    // Cleanup speech recognition on unmount
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+    };
   }, [activeTab, user._id]);
 
   const handleSymptomCheck = async (e) => {
@@ -129,6 +140,54 @@ const PatientDashboard = () => {
     } catch (e) {
       toast.error('Error analyzing symptoms');
     }
+  };
+
+  const toggleListening = () => {
+    if (isListening) {
+      recognitionRef.current?.stop();
+      setIsListening(false);
+      return;
+    }
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      return toast.error("Your browser doesn't support speech recognition.");
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = 'en-US';
+
+    recognition.onstart = () => {
+      setIsListening(true);
+      toast.success("Microphone active. Start speaking...")
+    };
+    
+    recognition.onresult = (event) => {
+      let finalTranscript = '';
+      for (let i = event.resultIndex; i < event.results.length; ++i) {
+        if (event.results[i].isFinal) {
+          finalTranscript += event.results[i][0].transcript + ' ';
+        }
+      }
+      if (finalTranscript) {
+        setSymptoms(prev => (prev ? prev + ' ' : '') + finalTranscript.trim());
+      }
+    };
+
+    recognition.onerror = (event) => {
+      if (event.error !== 'no-speech') {
+         console.error(event.error);
+         toast.error("Microphone error.");
+      }
+      setIsListening(false);
+    };
+
+    recognition.onend = () => setIsListening(false);
+
+    recognition.start();
+    recognitionRef.current = recognition;
   };
 
   const handleAnalyzePrescription = async (id) => {
@@ -232,7 +291,21 @@ const PatientDashboard = () => {
                 </h2>
                 <form onSubmit={handleSymptomCheck} className="space-y-6">
                   <div>
-                    <label className="block text-sm font-bold text-themeDark mb-2 uppercase tracking-wide">Describe your symptoms</label>
+                    <div className="flex justify-between items-center mb-2">
+                       <label className="block text-sm font-bold text-themeDark uppercase tracking-wide">Describe your symptoms</label>
+                       <button 
+                         type="button"
+                         onClick={toggleListening}
+                         className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-black transition-all ${
+                           isListening 
+                           ? 'bg-red-50 text-red-500 border border-red-200 animate-pulse' 
+                           : 'bg-themeSoft border border-themePrimary/20 text-themePrimary hover:bg-themeMedium'
+                         }`}
+                       >
+                          {isListening ? <MicOff size={14} /> : <Mic size={14} />} 
+                          {isListening ? 'STOP LISTENING' : 'VOICE DICTATION'}
+                       </button>
+                    </div>
                     <textarea 
                       className="w-full bg-themeLight border-2 border-themeMedium/50 rounded-xl p-4 text-themeDeep placeholder-themeDark/50 focus:outline-none focus:ring-4 focus:ring-themePrimary/20 focus:border-themePrimary transition-all font-medium" 
                       rows="3" 
@@ -259,28 +332,29 @@ const PatientDashboard = () => {
                   </button>
                 </form>
                 
-                {triageRes && (
-                  <motion.div 
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    className="mt-8 p-6 bg-themeSoft border border-themePrimary/30 rounded-xl overflow-hidden"
-                  >
-                    <div className="flex gap-2 mb-3 items-center">
-                      <span className="font-bold text-themeDeep">Severity:</span> 
-                      <span className={`px-4 py-1.5 text-xs rounded-full font-black tracking-widest uppercase shadow-sm ${
-                        triageRes.severity === 'high' || triageRes.severity === 'critical' ? 'bg-red-500 text-white' : 'bg-yellow-500 text-white'
-                      }`}>{triageRes.severity}</span>
+                <div className="space-y-6">
+                  <AINurseCall />
+                  
+                  {triageRes && (
+                    <div className="bg-themePrimary text-white rounded-2xl p-6 shadow-xl relative overflow-hidden">
+                      <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-bl-full translate-x-10 -translate-y-10"></div>
+                      <div className="flex gap-2 mb-3 items-center">
+                        <span className="font-bold text-white">Severity:</span> 
+                        <span className={`px-4 py-1.5 text-xs rounded-full font-black tracking-widest uppercase shadow-sm ${
+                          triageRes.severity === 'high' || triageRes.severity === 'critical' ? 'bg-red-500 text-white' : 'bg-yellow-500 text-white'
+                        }`}>{triageRes.severity}</span>
+                      </div>
+                      <p className="text-white text-lg leading-relaxed"><strong>Recommended Action:</strong> {triageRes.recommendedAction}</p>
+                      <div className="mt-4 p-4 border-l-4 border-white bg-white/10 rounded-r-lg">
+                         <p className="text-xs font-black text-white uppercase mb-1">Possible Conditions</p>
+                         <p className="font-bold text-white">{triageRes.possibleConditions?.join(', ')}</p>
+                      </div>
+                      <div className="mt-6 text-[10px] font-black uppercase text-white/70 bg-white/10 p-3 rounded-lg border border-white/20 italic">
+                        Disclaimer: {triageRes.disclaimer}
+                      </div>
                     </div>
-                    <p className="text-themeDeep text-lg leading-relaxed"><strong>Recommended Action:</strong> {triageRes.recommendedAction}</p>
-                    <div className="mt-4 p-4 border-l-4 border-themePrimary bg-white/50 rounded-r-lg">
-                       <p className="text-xs font-black text-themePrimary uppercase mb-1">Possible Conditions</p>
-                       <p className="font-bold text-themeDeep">{triageRes.possibleConditions?.join(', ')}</p>
-                    </div>
-                    <div className="mt-6 text-[10px] font-black uppercase text-red-500 bg-white/80 p-3 rounded-lg border border-red-100 italic">
-                      Disclaimer: {triageRes.disclaimer}
-                    </div>
-                  </motion.div>
-                )}
+                  )}
+                </div>
               </div>
             )}
 

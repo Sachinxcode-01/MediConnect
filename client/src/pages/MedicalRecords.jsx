@@ -350,7 +350,7 @@ const MedicalRecords = () => {
                      </p>
                   </div>
                   <p className="text-xs text-themeDark/50 font-bold uppercase tracking-widest text-center">
-                     Powered by Gemini 1.5 Pro • P2P Encrypted Analysis
+                     Powered by Gemini 2.0 Flash • P2P Encrypted Analysis
                   </p>
                   <button 
                     onClick={() => setIsSummaryOpen(false)}

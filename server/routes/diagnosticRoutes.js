@@ -2,18 +2,20 @@ const express = require('express');
 const router = express.Router();
 const { protect } = require('../middleware/auth');
 const multer = require('multer');
-const axios = require('axios');
 const { GoogleGenAI } = require('@google/genai');
 const supabase = require('../utils/supabase');
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+const genAI = new GoogleGenAI(process.env.GEMINI_API_KEY);
 const upload = multer({ storage: multer.memoryStorage() });
 
 router.post('/analyze-image', protect(['patient']), upload.single('image'), async (req, res) => {
     try {
         if (!req.file) return res.status(400).json({ message: 'No image provided.' });
 
-        const model = ai.getGenerativeModel({ model: "gemini-2.0-flash" });
+        const model = genAI.getGenerativeModel({ 
+            model: "gemini-2.0-flash",
+            generationConfig: { responseMimeType: "application/json" }
+        });
 
         const prompt = `
             You are a world-class clinical diagnostic assistant. 
@@ -39,9 +41,6 @@ router.post('/analyze-image', protect(['patient']), upload.single('image'), asyn
         const response = await result.response;
         let text = response.text();
         
-        // Remove markdown formatting if present
-        text = text.replace(/```json/g, '').replace(/```/g, '').trim();
-        
         res.json(JSON.parse(text));
     } catch (e) {
         console.error('Vision AI Error:', e);
@@ -52,15 +51,18 @@ router.post('/analyze-image', protect(['patient']), upload.single('image'), asyn
 router.post('/predictive-risk', protect(['patient']), async (req, res) => {
     try {
         const { data: vitals, error } = await supabase
-            .from('wearable_data')
+            .from('wearable_history')
             .select('*')
-            .eq('user_id', req.user.id)
+            .eq('patient_id', req.user.id) // This might need lookup from patient table if req.user.id is user_id
             .order('timestamp', { ascending: false })
             .limit(50);
 
         if (error) throw error;
 
-        const model = ai.getGenerativeModel({ model: "gemini-2.0-flash" });
+        const model = genAI.getGenerativeModel({ 
+            model: "gemini-2.0-flash",
+            generationConfig: { responseMimeType: "application/json" }
+        });
 
         const prompt = `
             Analyze the following patient biometric data (Heart Rate and SpO2 history):
@@ -76,7 +78,6 @@ router.post('/predictive-risk', protect(['patient']), async (req, res) => {
 
         const result = await model.generateContent(prompt);
         let text = result.response.text();
-        text = text.replace(/```json/g, '').replace(/```/g, '').trim();
 
         res.json(JSON.parse(text));
     } catch (e) {

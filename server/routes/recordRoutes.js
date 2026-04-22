@@ -8,7 +8,7 @@ const { CloudinaryStorage } = require('multer-storage-cloudinary');
 const { GoogleGenAI } = require('@google/genai');
 
 // Initialize Gemini SDK
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+const genAI = new GoogleGenAI(process.env.GEMINI_API_KEY);
 
 // Configure Cloudinary
 cloudinary.config({
@@ -25,11 +25,6 @@ const storage = new CloudinaryStorage({
   },
 });
 const upload = multer({ storage: storage });
-
-const openai = new OpenAI({
-    baseURL: "https://openrouter.ai/api/v1",
-    apiKey: process.env.OPENROUTER_API_KEY,
-});
 
 router.get('/', protect(['patient', 'doctor', 'admin']), async (req, res) => {
   try {
@@ -81,15 +76,16 @@ router.post('/:id/summarize', protect(['patient', 'doctor']), async (req, res) =
         const { data: record, error } = await supabase.from('medical_records').select('*').eq('id', req.params.id).single();
         if (error || !record) return res.status(404).json({ message: 'Record not found' });
         
-        const prompt = `Analyze this medical record titled "${record.title}". Description: "${record.description}". Record Type: ${record.type}. Provide a brief 2-sentence patient-friendly summary and 1 crucial next step.`;
+        const prompt = `Analyze this medical record titled "${record.title}". Description: "${record.description}". Record Type: ${record.type}. Provide a brief 2-sentence patient-friendly summary and 1 crucial next step. Avoid medical jargon where possible.`;
         
-        const result = await ai.models.generateContent({
-            model: "gemini-2.0-flash",
-            contents: prompt
-        });
+        const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+        const text = response.text();
 
-        res.json({ summary: result.text });
+        res.json({ summary: text });
     } catch (e) {
+        console.error("Summarization Error:", e);
         res.status(500).json({ message: "Failed to summarize record.", error: e.message });
     }
 });
@@ -126,6 +122,39 @@ router.post('/', protect(['doctor', 'admin']), upload.single('file'), async (req
   } catch (error) {
     console.error('Record upload error:', error);
     res.status(500).json({ message: 'Error creating record', error: error.message });
+  }
+});
+
+// NEW: Save AI Scribe Clinical Note
+router.post('/scribe', protect(['doctor']), async (req, res) => {
+  try {
+    const { patientId, consultationBrief } = req.body;
+    
+    if (!patientId || !consultationBrief) {
+      return res.status(400).json({ message: 'Patient ID and brief content are required.' });
+    }
+
+    // Find doctor_id
+    const { data: doctor } = await supabase.from('doctors').select('id').eq('user_id', req.user.id).single();
+
+    const { data: newRecord, error } = await supabase
+        .from('medical_records')
+        .insert([{
+            patient_id: patientId,
+            doctor_id: doctor?.id,
+            type: 'Consultation Brief',
+            title: `AI Consultation Brief - ${new Date().toLocaleDateString()}`,
+            description: consultationBrief,
+            file_url: 'AI_GENERATED' // Placeholder since this is a digital-only note
+        }])
+        .select()
+        .single();
+
+    if (error) throw error;
+    res.status(201).json({ ...newRecord, _id: newRecord.id });
+  } catch (error) {
+    console.error('Scribe save error:', error);
+    res.status(500).json({ message: 'Error saving clinical note', error: error.message });
   }
 });
 

@@ -2,20 +2,13 @@ const express = require('express');
 const router = express.Router();
 const supabase = require('../utils/supabase');
 const { protect } = require('../middleware/auth');
-const { Ollama } = require('ollama');
+const { GoogleGenAI } = require('@google/genai');
 
-// Initialize local Ollama for zero-leak privacy on wearables
-const ollama = new Ollama({
-  host: process.env.OLLAMA_HOST || 'http://127.0.0.1:11434',
-  headers: {
-    Authorization: `Bearer ${process.env.OLLAMA_API_KEY}`
-  }
-});
+const genAI = new GoogleGenAI(process.env.GEMINI_API_KEY);
 
 router.post('/sync', async (req, res) => {
   const { patientId, heartRate, spO2, temperature, bloodPressure } = req.body;
   
-  // patientId here might be the SQL UUID of the patient record
   let alertTriggered = false;
   if (heartRate > 120 || spO2 < 90 || temperature > 38.5) {
     alertTriggered = true;
@@ -36,11 +29,9 @@ router.post('/sync', async (req, res) => {
 
   if (error) return res.status(500).json({ message: error.message });
 
-  // Map to maintain frontend compatibility
   const compatData = { ...data, _id: data.id, patientId: data.patient_id };
-
-  // Emit live
   req.io.emit('vitals-update', compatData);
+  
   if (alertTriggered) {
     req.io.emit('vital-alert', { patientId, message: 'Critical vitals detected!' });
   }
@@ -75,7 +66,7 @@ router.get('/:patientId/history', protect(), async (req, res) => {
   res.json(mapped);
 });
 
-// Private analytics engine using Ollama
+// Analytics engine using Gemini 2.0 Flash
 router.post('/:patientId/analyze', protect(), async (req, res) => {
     try {
       const { data, error } = await supabase
@@ -83,28 +74,33 @@ router.post('/:patientId/analyze', protect(), async (req, res) => {
         .select('*')
         .eq('patient_id', req.params.patientId)
         .order('timestamp', { ascending: false })
-        .limit(10);
+        .limit(15);
 
-      if (error || !data.length) return res.json({ analysis: "No recent wearable data found." });
+      if (error || !data.length) return res.json({ analysis: "No medical telemetry data discovered." });
       
-      const summaryContent = data.map(d => `HR: ${d.heart_rate}, SpO2: ${d.spo2}%`).join('; ');
+      const summaryContent = data.map(d => `Time: ${d.timestamp}, HR: ${d.heart_rate}, SpO2: ${d.spo2}%`).join(' | ');
       
-      const response = await ollama.chat({
-          model: 'medllama2',
-          messages: [{ role: 'user', content: `Summarize this recent biometric data into a 2-sentence medical observation: ${summaryContent}` }]
-      });
+      const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+      const prompt = `
+        You are an advanced biometric analysis engine.
+        Analyze this recent patient telemetry stream: ${summaryContent}
+        
+        Provide a concise, highly professional clinical observation (under 40 words).
+        Identify if trends are stable, improving, or deteriorating.
+        Always focus on medical precision.
+      `;
 
-      res.json({ analysis: response.message.content || 'Analysis unavailable.' });
+      const result = await model.generateContent(prompt);
+      res.json({ analysis: result.response.text() || 'Telemetry analysis engine timed out.' });
     } catch (e) {
       console.error("Wearable Analytics error:", e);
-      res.status(500).json({ message: "Failed to connect to local Ollama analytics node.", error: e.message });
+      res.status(500).json({ message: "Neural Analytic Nodes offline.", error: e.message });
     }
 });
 
 router.post('/simulate', async (req, res) => {
   const { patientId } = req.body;
   
-  // Verify patient exists in SQL
   const { data: p } = await supabase.from('patients').select('id').eq('user_id', patientId).single();
   const actualId = p ? p.id : patientId;
 

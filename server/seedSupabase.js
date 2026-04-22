@@ -1,6 +1,9 @@
-require('dotenv').config();
-const supabase = require('./utils/supabase');
-const bcrypt = require('bcryptjs');
+import dotenv from 'dotenv';
+import supabase from './utils/supabase.js';
+import bcrypt from 'bcryptjs';
+
+dotenv.config();
+
 
 const seedDatabase = async () => {
   try {
