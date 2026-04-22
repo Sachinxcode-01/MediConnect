@@ -271,3 +271,27 @@ export const sendLoginOTP = async (email, otp, userName) => {
     html
   });
 };
+
+export const sendPasswordResetEmail = async (email, otp, userName) => {
+  const html = `
+<!DOCTYPE html>
+<html lang="en">
+<body style="font-family: Arial, sans-serif; background: #f0f4ff; margin: 0; padding: 20px;">
+  <div style="background: white; padding: 30px; border-radius: 10px; max-width: 500px; margin: auto;">
+    <h2 style="color: #667eea;">MediConnect Password Reset</h2>
+    <p>We received a request to reset your password. Use the code below to complete the reset:</p>
+    <div style="font-size: 32px; font-weight: bold; padding: 20px; background: #e8f5e9; border-radius: 10px; text-align: center; color: #11998e; letter-spacing: 5px;">
+      ${otp}
+    </div>
+    <p>This code expires in 10 minutes. Do not share this with anyone!</p>
+    <p style="color: #888; font-size: 12px; margin-top: 30px;">If you didn't request a reset, please ignore this email or contact support.</p>
+  </div>
+</body>
+</html>
+  `;
+  return sendEmail({
+    to: email,
+    subject: '🔒 Reset Your Password - MediConnect',
+    html
+  });
+};

@@ -104,13 +104,23 @@ class User {
         email: data.email,
         password: hashedPassword,
         role: data.role || 'patient',
-        profile_image: '',
+        profile_image: data.profileImage || '',
       })
       .select()
       .single();
 
     if (error) throw error;
     return User._fromRow(row);
+  }
+
+  static async updatePassword(id, rawPassword) {
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(rawPassword, salt);
+    const { error } = await supabase
+        .from('users')
+        .update({ password: hashedPassword, updated_at: new Date().toISOString() })
+        .eq('id', id);
+    if (error) throw error;
   }
 
   async comparePassword(candidatePassword) {

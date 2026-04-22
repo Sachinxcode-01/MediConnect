@@ -70,11 +70,13 @@ export const AuthProvider = ({ children }) => {
       password,
       deviceFingerprint
     });
-    if (!res.data?.accessToken) {
+    
+    const token = res.data?.token || res.data?.accessToken;
+    if (!token) {
       throw new Error('Invalid response from server');
     }
-    storage.setToken(res.data.accessToken);
-    setUser(res.data);
+    storage.setToken(token);
+    setUser(res.data.user || res.data);
     return res.data;
   }, []);
 
@@ -99,11 +101,13 @@ export const AuthProvider = ({ children }) => {
       password,
       role
     });
-    if (!res.data?.accessToken) {
-      throw new Error('Invalid response from server');
+    const token = res.data?.token || res.data?.accessToken;
+    // For registration, backend might not return token immediately if email verification is required
+    // But if it does:
+    if (token) {
+        storage.setToken(token);
+        setUser(res.data.user || res.data);
     }
-    storage.setToken(res.data.accessToken);
-    setUser(res.data);
     return res.data;
   }, []);
 

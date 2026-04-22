@@ -5,6 +5,8 @@ import toast from 'react-hot-toast';
 import { Activity, ShieldCheck, Mail, Lock, User, UserCheck, ArrowRight, Sparkles, Eye, EyeOff, CheckCircle, XCircle, AlertCircle, Fingerprint, Zap } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { sanitizeInput } from '../utils/validation';
+import { GoogleLogin } from '@react-oauth/google';
+import api from '../api/axios';
 
 const RegisterPage = () => {
   const [name, setName] = useState('');
@@ -17,7 +19,7 @@ const RegisterPage = () => {
   const [touched, setTouched] = useState({ name: false, email: false, password: false });
   const [deviceFingerprint, setDeviceFingerprint] = useState('');
 
-  const { register } = useContext(AuthContext);
+  const { register, setSession } = useContext(AuthContext);
   const navigate = useNavigate();
 
   // Generate device fingerprint
@@ -174,6 +176,38 @@ const RegisterPage = () => {
       setErrors({ submit: msg });
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleGoogleSuccess = async (credentialResponse) => {
+    setIsSubmitting(true);
+    try {
+        const res = await api.post('/api/auth/google', {
+            credential: credentialResponse.credential,
+            role // use selected role
+        });
+        
+        toast.success('Signed in with Google successfully!', {
+            icon: '🎉',
+            duration: 3000
+        });
+
+        if (res.data.token && res.data.user) {
+            setSession(res.data.user, res.data.token);
+        } else if (res.data.accessToken && res.data.user) {
+            setSession(res.data.user, res.data.accessToken);
+        }
+
+        if (res.data.user.role === 'patient') navigate('/patient');
+        else if (res.data.user.role === 'doctor') navigate('/doctor');
+        else if (res.data.user.role === 'admin') navigate('/admin');
+    } catch (err) {
+        console.error('Google Auth Error:', err);
+        toast.error('Google Registration failed. Please try again.', {
+            icon: <AlertCircle className="w-5 h-5" />
+        });
+    } finally {
+        setIsSubmitting(false);
     }
   };
 
@@ -571,9 +605,22 @@ const RegisterPage = () => {
               <div className="relative flex items-center justify-center mb-4">
                 <div className="absolute inset-0 border-t border-themeMedium/20"></div>
                 <span className="relative z-10 px-4 bg-gradient-to-r from-transparent via-white/80 to-transparent text-[9px] font-black text-themeDark/40 uppercase tracking-widest">
-                  Protected by Enterprise Security
+                  Or register with
                 </span>
               </div>
+              
+              <div className="flex justify-center mb-6">
+                 <GoogleLogin
+                    onSuccess={handleGoogleSuccess}
+                    onError={() => {
+                        toast.error('Google Sign-In was unsuccessful.');
+                    }}
+                    useOneTap
+                    theme="outline"
+                    shape="pill"
+                 />
+              </div>
+
             </div>
 
             {/* Login Link */}

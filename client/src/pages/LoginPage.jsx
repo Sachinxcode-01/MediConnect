@@ -5,6 +5,8 @@ import toast from 'react-hot-toast';
 import { Activity, Mail, Lock, ArrowRight, Shield, Eye, EyeOff, Zap, CheckCircle, XCircle, AlertCircle, Fingerprint, Smartphone, Key, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../api/axios';
+import { GoogleLogin } from '@react-oauth/google';
+
 
 const LoginPage = () => {
   const [loginMode, setLoginMode] = useState('password'); // 'password' or 'otp'
@@ -345,6 +347,38 @@ const LoginPage = () => {
     }
   }, [user, navigate]);
 
+  const handleGoogleSuccess = async (credentialResponse) => {
+    setIsSubmitting(true);
+    try {
+        const res = await api.post('/api/auth/google', {
+            credential: credentialResponse.credential,
+            role: 'patient' // default to patient
+        });
+        
+        toast.success('Google Login successful!', {
+            icon: '🎉',
+            duration: 3000
+        });
+
+        if (res.data.token && res.data.user) {
+            setSession(res.data.user, res.data.token);
+        } else if (res.data.accessToken && res.data.user) {
+            setSession(res.data.user, res.data.accessToken);
+        }
+
+        const from = location.state?.from?.pathname || '/';
+        navigate(from, { replace: true });
+    } catch (err) {
+        console.error('Google Auth Error:', err);
+        toast.error('Google Login failed. Please try again.', {
+            icon: <AlertCircle className="w-5 h-5" />
+        });
+    } finally {
+        setIsSubmitting(false);
+    }
+  };
+
+
   const formatTime = (seconds) => `${Math.floor(seconds / 60)}:${(seconds % 60).toString().padStart(2, '0')}`;
 
   return (
@@ -621,7 +655,29 @@ const LoginPage = () => {
                   VERIFY & LOGIN
                 </motion.button>
               )}
+              
+              {/* Divider */}
+              <div className="flex items-center gap-4 my-6 opacity-60">
+                  <div className="h-px bg-themeMedium/30 flex-1"></div>
+                  <span className="text-[10px] font-black tracking-widest uppercase">Or</span>
+                  <div className="h-px bg-themeMedium/30 flex-1"></div>
+              </div>
+
+              {/* Google Login */}
+              <div className="flex justify-center -mt-2">
+                 <GoogleLogin
+                    onSuccess={handleGoogleSuccess}
+                    onError={() => {
+                        toast.error('Google Sign-In was unsuccessful.');
+                    }}
+                    useOneTap
+                    theme="outline"
+                    shape="pill"
+                 />
+              </div>
+
             </form>
+
 
             {/* Security Notice */}
             <div className="mt-6 p-4 bg-themeSoft/30 rounded-xl border border-themePrimary/20">

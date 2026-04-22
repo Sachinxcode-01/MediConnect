@@ -1,7 +1,11 @@
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import { User, EmailOTP } from '../models/index.js';
-import { sendVerificationEmail, sendLoginOTP } from '../utils/emailService.js';
+import { sendVerificationEmail, sendLoginOTP, sendPasswordResetEmail } from '../utils/emailService.js';
+import { OAuth2Client } from 'google-auth-library';
+
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
 
 // Generate JWT Token
 const generateToken = (id) => {
@@ -437,4 +441,156 @@ export const refreshToken = async (req, res, next) => {
     success: false,
     message: 'Token refresh not implemented. Please login again.'
   });
+};
+
+// @desc    Forgot Password - Send OTP
+// @route   POST /api/auth/forgot-password
+// @access  Public
+export const forgotPassword = async (req, res, next) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ success: false, message: 'Email is required' });
+    }
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'No account found with this email' });
+    }
+
+    const { otp } = await EmailOTP.createOTP({
+      email: user.email,
+      purpose: 'reset',
+      userId: user._id,
+      expiresInMinutes: 10
+    });
+
+    await sendPasswordResetEmail(user.email, otp, user.name);
+
+    res.status(200).json({
+      success: true,
+      message: 'Password reset code sent to your email.'
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Verify Reset OTP
+// @route   POST /api/auth/verify-reset-otp
+// @access  Public
+export const verifyResetOTP = async (req, res, next) => {
+  try {
+    const { email, otp } = req.body;
+    if (!email || !otp) {
+      return res.status(400).json({ success: false, message: 'Email and OTP are required' });
+    }
+
+    const result = await EmailOTP.verifyOTP({ email, otp, purpose: 'reset' });
+    if (!result.valid) {
+      return res.status(400).json({ success: false, message: result.message });
+    }
+
+    // Usually, we just return success and wait for the reset-password endpoint to perform the actual update.
+    // However, to prevent OTP invalidation before the next step (since verifyOTP usually marks it as used or deletes it in simple models), we'll recreate the OTP or we'll perform a workaround. Let's assume verifyOTP consumes it. Wait - if verifyOTP consumes it, resetPassword will fail.
+    // Actually, EmailOTP.verifyOTP probably deletes it. So we shouldn't delete it here if they still need to reset in the second step.
+    // Let's adjust: verifyOTP actually deletes it. Instead of consuming it, let's just generate a 'reset token' to pass to the client or assume the client will pass `resetToken`.
+    // For simplicity, we can let verifyResetOTP issue a temporary reset_token, but let's just issue a standard JWT with short expiry.
+    const tempToken = jwt.sign({ id: result.userId, otpVerified: true }, process.env.JWT_SECRET, { expiresIn: '15m' });
+
+    res.status(200).json({
+      success: true,
+      message: 'OTP verified. Proceed to reset password.',
+      tempToken
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Reset Password
+// @route   POST /api/auth/reset-password
+// @access  Public
+export const resetPassword = async (req, res, next) => {
+  try {
+    const { email, newPassword, otp, tempToken } = req.body;
+
+    if (!email || !newPassword) {
+      return res.status(400).json({ success: false, message: 'Email and new password are required' });
+    }
+
+    let userId = null;
+
+    // Check if they passed tempToken from verify-reset-otp, or if they passed raw OTP
+    if (tempToken) {
+        const decoded = jwt.verify(tempToken, process.env.JWT_SECRET);
+        if (!decoded.otpVerified) {
+             return res.status(400).json({ success: false, message: 'Invalid reset flow' });
+        }
+        userId = decoded.id;
+    } else if (otp) {
+        const result = await EmailOTP.verifyOTP({ email, otp, purpose: 'reset' });
+        if (!result.valid) {
+            return res.status(400).json({ success: false, message: result.message });
+        }
+        userId = result.userId;
+    } else {
+        return res.status(400).json({ success: false, message: 'OTP is required to reset password.' });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    await User.updatePassword(userId, newPassword);
+
+    res.status(200).json({
+      success: true,
+      message: 'Password has been successfully updated.'
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Google standard Login
+// @route   POST /api/auth/google
+// @access  Public
+export const googleLogin = async (req, res, next) => {
+   try {
+     const { credential, role } = req.body; // usually contains ID token from Google
+
+     if (!credential) {
+        return res.status(400).json({ success: false, message: 'Google credential missing' });
+     }
+
+     const ticket = await client.verifyIdToken({
+       idToken: credential,
+       audience: process.env.GOOGLE_CLIENT_ID
+     });
+     
+     const payload = ticket.getPayload();
+     const { email, name, picture, sub } = payload;
+     
+     let user = await User.findOne({ email });
+
+     if (!user) {
+        // Register the user
+        user = await User.create({
+            name,
+            email,
+            password: crypto.randomBytes(20).toString('hex'), // random unguessable password
+            role: role || 'patient',
+            profileImage: picture,
+            googleId: sub,
+        });
+     }
+
+     sendTokenResponse(user, 200, res);
+
+   } catch (error) {
+     console.error('Google Auth Error:', error);
+     res.status(401).json({ success: false, message: 'Google Authentication Failed', error: error.message });
+   }
 };

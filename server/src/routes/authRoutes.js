@@ -9,7 +9,11 @@ import {
   verifyEmail,
   resendVerification,
   requestLoginOTP,
-  verifyLoginOTP
+  verifyLoginOTP,
+  forgotPassword,
+  verifyResetOTP,
+  resetPassword,
+  googleLogin
 } from '../controllers/authController.js';
 import { protect } from '../middleware/auth.js';
 import { authLimiter } from '../middleware/rateLimiter.js';
@@ -27,6 +31,14 @@ router.post('/verify-login-otp', authLimiter, verifyLoginOTP);
 
 // Password-based login
 router.post('/login', authLimiter, login);
+
+// Forgot Password
+router.post('/forgot-password', authLimiter, forgotPassword);
+router.post('/verify-reset-otp', authLimiter, verifyResetOTP);
+router.post('/reset-password', authLimiter, resetPassword);
+
+// Google Sign-In
+router.post('/google', authLimiter, googleLogin);
 
 // Protected routes
 router.get('/me', protect, getMe);
