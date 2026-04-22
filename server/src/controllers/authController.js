@@ -554,25 +554,30 @@ export const resetPassword = async (req, res, next) => {
   }
 };
 
+import axios from 'axios';
+
 // @desc    Google standard Login
 // @route   POST /api/auth/google
 // @access  Public
 export const googleLogin = async (req, res, next) => {
    try {
-     const { credential, role } = req.body; // usually contains ID token from Google
+     const { credential, role } = req.body; // usually contains access token from useGoogleLogin
 
      if (!credential) {
         return res.status(400).json({ success: false, message: 'Google credential missing' });
      }
 
-     const ticket = await client.verifyIdToken({
-       idToken: credential,
-       audience: process.env.GOOGLE_CLIENT_ID
+     // Verify access token by fetching user profile from Google
+     const googleRes = await axios.get('https://www.googleapis.com/oauth2/v3/userinfo', {
+        headers: { Authorization: `Bearer ${credential}` }
      });
      
-     const payload = ticket.getPayload();
-     const { email, name, picture, sub } = payload;
+     const { email, name, picture, sub } = googleRes.data;
      
+     if (!email) {
+        return res.status(400).json({ success: false, message: 'Could not fetch Google email' });
+     }
+
      let user = await User.findOne({ email });
 
      if (!user) {
@@ -590,7 +595,7 @@ export const googleLogin = async (req, res, next) => {
      sendTokenResponse(user, 200, res);
 
    } catch (error) {
-     console.error('Google Auth Error:', error);
+     console.error('Google Auth Error:', error.response?.data || error.message);
      res.status(401).json({ success: false, message: 'Google Authentication Failed', error: error.message });
    }
 };
