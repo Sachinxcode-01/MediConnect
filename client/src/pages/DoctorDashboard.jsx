@@ -4,6 +4,7 @@ import { LogOut, Activity, Users, Calendar, Video, Database, Sparkles, FileText,
 import api from '../api/axios';
 import { io } from 'socket.io-client';
 import toast from 'react-hot-toast';
+// eslint-disable-next-line no-unused-vars
 import { motion, AnimatePresence } from 'framer-motion';
 import DashboardSidebar from '../components/DashboardSidebar';
 import ReactMarkdown from 'react-markdown';
@@ -43,9 +44,8 @@ const DoctorDashboard = () => {
 
   const socketRef = useRef();
 
-  const fetchData = async (showLoading = true) => {
+  const fetchData = async () => {
     try {
-      if (showLoading) setLoading(true);
       const [queueRes, patientsRes, prescriptionsRes, appointmentsRes] = await Promise.all([
         api.get('/api/triage/queue').catch(() => ({ data: { data: [] } })),
         api.get('/api/patients').catch(() => ({ data: { data: [] } })),
@@ -53,24 +53,40 @@ const DoctorDashboard = () => {
         api.get('/api/appointments/doctor').catch(() => ({ data: { data: [] } }))
       ]);
 
-      const queueData = queueRes.data?.data || queueRes.data || [];
-      const patientData = patientsRes.data?.data || patientsRes.data || [];
-      const rxData = prescriptionsRes.data?.data || prescriptionsRes.data || [];
-      const aptData = appointmentsRes.data?.data || appointmentsRes.data || [];
-
-      setQueue(queueData);
-      setPatients(patientData);
-      setPrescriptions(rxData);
-      setAppointments(aptData);
-    } catch (_err) {
+      setQueue(queueRes.data?.data || queueRes.data || []);
+      setPatients(patientsRes.data?.data || patientsRes.data || []);
+      setPrescriptions(prescriptionsRes.data?.data || prescriptionsRes.data || []);
+      setAppointments(appointmentsRes.data?.data || appointmentsRes.data || []);
+    } catch {
       toast.error('Failed to load dashboard data');
-    } finally {
-      if (showLoading) setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchData(false);
+    let isMounted = true;
+
+    const loadInitialData = async () => {
+      try {
+        const [queueRes, patientsRes, prescriptionsRes, appointmentsRes] = await Promise.all([
+          api.get('/api/triage/queue').catch(() => ({ data: { data: [] } })),
+          api.get('/api/patients').catch(() => ({ data: { data: [] } })),
+          api.get('/api/prescriptions').catch(() => ({ data: { data: [] } })),
+          api.get('/api/appointments/doctor').catch(() => ({ data: { data: [] } }))
+        ]);
+
+        if (!isMounted) return;
+        setQueue(queueRes.data?.data || queueRes.data || []);
+        setPatients(patientsRes.data?.data || patientsRes.data || []);
+        setPrescriptions(prescriptionsRes.data?.data || prescriptionsRes.data || []);
+        setAppointments(appointmentsRes.data?.data || appointmentsRes.data || []);
+      } catch {
+        toast.error('Failed to load dashboard data');
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+
+    loadInitialData();
 
     socketRef.current = io(import.meta.env.VITE_API_URL || 'http://localhost:5000');
     socketRef.current.on('new-triage-entry', (data) => {
@@ -78,15 +94,18 @@ const DoctorDashboard = () => {
       toast('New Patient in Triage Queue!', { icon: '🚨', position: 'top-right' });
     });
 
-    return () => socketRef.current?.disconnect();
+    return () => {
+      isMounted = false;
+      socketRef.current?.disconnect();
+    };
   }, []);
 
   const handleClaimTriage = async (triageId) => {
     try {
       await api.put(`/api/triage/${triageId}/assign`);
       toast.success('Case assigned to your workspace');
-      fetchData(false);
-    } catch (_err) {
+      fetchData();
+    } catch {
       toast.error('Failed to claim case');
     }
   };
@@ -102,8 +121,8 @@ const DoctorDashboard = () => {
       toast.success('Clinical note added');
       setClinicalNoteText('');
       setIsNoteModalOpen(false);
-      fetchData(false);
-    } catch (_err) {
+      fetchData();
+    } catch {
       toast.error('Failed to add clinical note');
     }
   };
@@ -130,7 +149,7 @@ const DoctorDashboard = () => {
         severity: entry.severity
       });
       setAnalysisText(res.data.analysis);
-    } catch (_err) {
+    } catch {
       toast.error('AI Analysis failed');
     } finally {
       setIsAnalyzing(false);
@@ -149,7 +168,7 @@ const DoctorDashboard = () => {
       setIsPrescriptionModalOpen(false);
       setPrescriptions([res.data?.data || res.data, ...prescriptions]);
       setNewPrescription({ patientId: '', medication: '', dosage: '', instructions: '', duration: '', frequency: 'Once daily' });
-    } catch (_err) {
+    } catch {
       toast.error('Failed to issue prescription');
     }
   };
