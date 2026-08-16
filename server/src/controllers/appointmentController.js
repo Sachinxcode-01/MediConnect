@@ -130,6 +130,16 @@ export const updateStatus = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Invalid status' });
     }
 
+    const currentAppointment = await Appointment.findById(req.params.id);
+    if (!currentAppointment) {
+      return res.status(404).json({ success: false, message: 'Appointment not found' });
+    }
+
+    // State machine protection: COMPLETED or CANCELLED cannot transition backwards
+    if (['completed', 'cancelled'].includes(currentAppointment.status) && status === 'scheduled') {
+      return res.status(400).json({ success: false, message: `Cannot revert ${currentAppointment.status} appointment to scheduled` });
+    }
+
     const appointment = await Appointment.findByIdAndUpdate(
       req.params.id,
       { status }
