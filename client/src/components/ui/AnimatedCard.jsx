@@ -11,10 +11,10 @@ export const AnimatedCard = ({
 }) => {
   return (
     <motion.div
-      whileHover={hoverElevate ? { y: -4, transition: { duration: 0.2, ease: 'easeOut' } } : undefined}
+      whileHover={hoverElevate ? { y: -2, transition: { duration: 0.2, ease: 'easeOut' } } : undefined}
       onClick={onClick}
       className={cn(
-        "bg-white rounded-3xl border border-slate-200/80 p-6 shadow-sm hover:shadow-xl hover:border-emerald-500/40 transition-all duration-300 relative overflow-hidden group",
+        "bg-slate-900 rounded-2xl border border-slate-800 p-6 shadow-md hover:shadow-2xl hover:border-blue-500/40 transition-all duration-200 relative overflow-hidden group text-slate-100",
         onClick && "cursor-pointer",
         className
       )}

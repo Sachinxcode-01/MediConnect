@@ -34,103 +34,81 @@ const DashboardSidebar = ({ activeTab, setActiveTab, logout, role }) => {
 
   const links = role === 'admin' ? adminLinks : role === 'doctor' ? doctorLinks : patientLinks;
 
-  const sidebarVariants = {
-    desktop: { width: isCollapsed ? 80 : 260, transition: { duration: 0.3 } },
-    mobile: { x: 0, transition: { duration: 0.3 } },
-    mobileClosed: { x: '-100%', transition: { duration: 0.3 } }
-  };
-
   return (
     <>
       {/* Mobile Toggle */}
       <button
         onClick={() => setIsMobileOpen(true)}
-        className="lg:hidden fixed top-4 left-4 z-50 p-3 bg-white rounded-xl shadow-lg border border-themeMedium/30 hover:shadow-neon transition-all"
+        className="lg:hidden fixed top-4 left-4 z-50 p-3 bg-slate-900 rounded-xl shadow-lg border border-slate-800 hover:border-blue-500 transition-all text-white"
       >
-        <Menu className="w-6 h-6 text-themePrimary" />
+        <Menu className="w-6 h-6 text-blue-500" />
       </button>
 
       {/* Desktop Sidebar */}
       <motion.aside
         initial={{ x: -100, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
-        className="hidden lg:flex flex-col h-screen bg-gradient-to-b from-white to-themeSoft/20 border-r border-themeMedium/20 shadow-lg z-40 sticky top-0"
+        className={`hidden lg:flex flex-col h-screen bg-slate-950 border-r border-slate-800/80 shadow-2xl z-40 sticky top-0 transition-all duration-300 ${
+          isCollapsed ? 'w-20' : 'w-64'
+        }`}
       >
         {/* Logo Section */}
-        <div className="p-6 border-b border-themeMedium/20">
+        <div className="p-6 border-b border-slate-800/80">
           <Link to="/" className="flex items-center gap-3 group">
-            <motion.div
-              whileHover={{ rotate: 180, scale: 1.1 }}
-              transition={{ duration: 0.5 }}
-              className="w-10 h-10 bg-gradient-to-br from-themePrimary to-themeDark rounded-xl flex items-center justify-center shadow-neon group-hover:shadow-neon-hover"
-            >
+            <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-600/30 group-hover:scale-105 transition-transform shrink-0">
               <Activity className="text-white w-5 h-5" />
-            </motion.div>
+            </div>
             {!isCollapsed && (
-              <motion.span
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="text-xl font-black tracking-tighter text-themeDeep group-hover:text-themePrimary transition-colors"
-              >
+              <span className="text-xl font-black tracking-tight text-white group-hover:text-blue-400 transition-colors">
                 MediConnect
-              </motion.span>
+              </span>
             )}
           </Link>
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 px-3 py-6 space-y-1 overflow-y-auto custom-scrollbar">
-          {links.map((link, idx) => (
-            <motion.button
+        <nav className="flex-1 px-3 py-6 space-y-1 overflow-y-auto">
+          {links.map((link) => (
+            <button
               key={link.id}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: idx * 0.05 }}
               onClick={() => setActiveTab(link.id)}
-              className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-300 group relative overflow-hidden ${
+              className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-200 group relative ${
                 activeTab === link.id
-                  ? 'bg-gradient-to-r from-themePrimary/10 to-themePrimary/5 text-themePrimary border border-themePrimary/30 shadow-md'
-                  : 'text-themeDark/60 hover:bg-white hover:text-themePrimary hover:translate-x-1'
+                  ? 'bg-blue-600/10 text-blue-400 border border-blue-500/30 font-black'
+                  : 'text-slate-400 hover:bg-slate-900 hover:text-white font-medium'
               }`}
             >
-              {activeTab === link.id && (
-                <motion.div
-                  layoutId="activeTab"
-                  className="absolute inset-0 bg-gradient-to-r from-themePrimary/5 to-transparent"
-                  transition={{ type: "spring", duration: 0.5 }}
-                />
-              )}
               <link.icon
                 size={20}
-                className={`relative z-10 ${activeTab === link.id ? 'text-themePrimary' : 'group-hover:text-themePrimary'} transition-colors`}
+                className={`relative z-10 ${activeTab === link.id ? 'text-blue-400' : 'group-hover:text-white'} transition-colors`}
               />
               {!isCollapsed && (
-                <span className="relative z-10 font-bold text-sm">{link.label}</span>
+                <span className="relative z-10 text-sm">{link.label}</span>
               )}
               {!isCollapsed && activeTab === link.id && (
-                <ChevronRight className="ml-auto w-4 h-4 text-themePrimary" />
+                <ChevronRight className="ml-auto w-4 h-4 text-blue-400" />
               )}
-            </motion.button>
+            </button>
           ))}
 
           {/* Quick Actions Divider */}
-          <div className="my-4 border-t border-themeMedium/20" />
+          <div className="my-4 border-t border-slate-800/80" />
 
           {/* Quick Actions */}
           <div className="space-y-1">
             <button
               onClick={() => window.location.href = '/telehealth'}
-              className="w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all text-themeDark/60 hover:bg-white hover:text-themePrimary hover:translate-x-1 group"
+              className="w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all text-slate-400 hover:bg-slate-900 hover:text-white font-medium"
             >
-              <Video size={20} className="group-hover:text-themePrimary transition-colors" />
-              {!isCollapsed && <span className="font-bold text-sm">Telehealth</span>}
+              <Video size={20} />
+              {!isCollapsed && <span className="text-sm">Telehealth</span>}
             </button>
             <button
               onClick={() => window.location.href = '/records'}
-              className="w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all text-themeDark/60 hover:bg-white hover:text-themePrimary hover:translate-x-1 group"
+              className="w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all text-slate-400 hover:bg-slate-900 hover:text-white font-medium"
             >
-              <Database size={20} className="group-hover:text-themePrimary transition-colors" />
-              {!isCollapsed && <span className="font-bold text-sm">Medical Records</span>}
+              <Database size={20} />
+              {!isCollapsed && <span className="text-sm">Medical Records</span>}
             </button>
           </div>
         </nav>
@@ -138,19 +116,19 @@ const DashboardSidebar = ({ activeTab, setActiveTab, logout, role }) => {
         {/* Collapse Toggle */}
         <button
           onClick={() => setIsCollapsed(!isCollapsed)}
-          className="hidden lg:flex items-center justify-center gap-2 p-3 mx-3 mb-2 rounded-xl border border-themeMedium/20 hover:bg-white hover:shadow-md transition-all text-themeDark/60 hover:text-themePrimary"
+          className="hidden lg:flex items-center justify-center gap-2 p-3 mx-3 mb-2 rounded-xl border border-slate-800 hover:bg-slate-900 transition-all text-slate-400 hover:text-white text-xs font-bold uppercase tracking-wider"
         >
-          {isCollapsed ? <ChevronRight size={18} /> : <span className="text-xs font-black uppercase tracking-widest">Collapse</span>}
+          {isCollapsed ? <ChevronRight size={18} /> : <span>Collapse</span>}
         </button>
 
         {/* Logout Section */}
-        <div className="p-3 border-t border-themeMedium/20">
+        <div className="p-3 border-t border-slate-800/80">
           <button
             onClick={logout}
-            className="w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all text-red-500 hover:bg-red-50 hover:shadow-md group"
+            className="w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all text-red-400 hover:bg-red-950/30 hover:border hover:border-red-500/30 font-bold text-sm"
           >
-            <LogOut size={20} className="group-hover:rotate-180 transition-transform duration-500" />
-            {!isCollapsed && <span className="font-bold text-sm">Logout</span>}
+            <LogOut size={20} />
+            {!isCollapsed && <span>Logout</span>}
           </button>
         </div>
       </motion.aside>
@@ -164,28 +142,28 @@ const DashboardSidebar = ({ activeTab, setActiveTab, logout, role }) => {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsMobileOpen(false)}
-              className="lg:hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-40"
+              className="lg:hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-40"
             />
             <motion.aside
               initial={{ x: '-100%' }}
               animate={{ x: 0 }}
               exit={{ x: '-100%' }}
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="lg:hidden fixed top-0 left-0 h-full w-72 bg-white shadow-2xl z-50 flex flex-col"
+              className="lg:hidden fixed top-0 left-0 h-full w-72 bg-slate-950 border-r border-slate-800 shadow-2xl z-50 flex flex-col"
             >
               {/* Mobile Header */}
-              <div className="flex items-center justify-between p-6 border-b border-themeMedium/20">
+              <div className="flex items-center justify-between p-6 border-b border-slate-800">
                 <Link to="/" className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-gradient-to-br from-themePrimary to-themeDark rounded-xl flex items-center justify-center shadow-neon">
+                  <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-600/30">
                     <Activity className="text-white w-5 h-5" />
                   </div>
-                  <span className="text-xl font-black tracking-tighter text-themeDeep">MediConnect</span>
+                  <span className="text-xl font-black tracking-tight text-white">MediConnect</span>
                 </Link>
                 <button
                   onClick={() => setIsMobileOpen(false)}
-                  className="p-2 hover:bg-themeSoft rounded-xl transition-colors"
+                  className="p-2 hover:bg-slate-900 rounded-xl transition-colors text-slate-400"
                 >
-                  <X className="w-6 h-6 text-themeDeep" />
+                  <X className="w-6 h-6" />
                 </button>
               </div>
 
@@ -200,38 +178,21 @@ const DashboardSidebar = ({ activeTab, setActiveTab, logout, role }) => {
                     }}
                     className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
                       activeTab === link.id
-                        ? 'bg-gradient-to-r from-themePrimary/10 to-themePrimary/5 text-themePrimary border border-themePrimary/30'
-                        : 'text-themeDark/60 hover:bg-themeSoft/30'
+                        ? 'bg-blue-600/10 text-blue-400 border border-blue-500/30 font-black'
+                        : 'text-slate-400 hover:bg-slate-900 hover:text-white font-medium'
                     }`}
                   >
-                    <link.icon size={20} className={activeTab === link.id ? 'text-themePrimary' : ''} />
-                    <span className="font-bold text-sm">{link.label}</span>
+                    <link.icon size={20} className={activeTab === link.id ? 'text-blue-400' : ''} />
+                    <span className="text-sm">{link.label}</span>
                   </button>
                 ))}
-
-                <div className="my-4 border-t border-themeMedium/20" />
-
-                <button
-                  onClick={() => { window.location.href = '/telehealth'; setIsMobileOpen(false); }}
-                  className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-themeDark/60 hover:bg-themeSoft/30"
-                >
-                  <Video size={20} />
-                  <span className="font-bold text-sm">Telehealth</span>
-                </button>
-                <button
-                  onClick={() => { window.location.href = '/records'; setIsMobileOpen(false); }}
-                  className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-themeDark/60 hover:bg-themeSoft/30"
-                >
-                  <Database size={20} />
-                  <span className="font-bold text-sm">Medical Records</span>
-                </button>
               </nav>
 
               {/* Mobile Logout */}
-              <div className="p-4 border-t border-themeMedium/20">
+              <div className="p-4 border-t border-slate-800">
                 <button
                   onClick={logout}
-                  className="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl text-red-500 bg-red-50 hover:bg-red-100 transition-all font-bold"
+                  className="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl text-red-400 bg-red-950/30 border border-red-500/30 hover:bg-red-900/40 transition-all font-bold text-sm"
                 >
                   <LogOut size={20} />
                   Logout
