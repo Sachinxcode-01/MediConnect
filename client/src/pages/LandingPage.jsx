@@ -1,16 +1,31 @@
-import React, { useContext, useEffect, useRef } from 'react';
+import React, { useContext, useState, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
-import { Activity, ShieldCheck, HeartPulse, Video, FileText, Database, Map, Sparkles, ArrowRight, CheckCircle, Zap, Lock, Users, TrendingUp } from 'lucide-react';
-import { motion, useScroll, useTransform, useSpring } from 'framer-motion';
+import { 
+  Activity, ShieldCheck, HeartPulse, Video, FileText, Database, Map, Sparkles, 
+  ArrowRight, CheckCircle, Zap, Lock, Users, TrendingUp, ChevronDown, 
+  Clock, Stethoscope, AlertTriangle, Shield, CheckCircle2, HelpCircle, 
+  Layers, UserCheck, MessageSquare, Compass, PhoneCall
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useGSAP } from '@gsap/react';
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip } from 'recharts';
+
+import AnimatedButton from '../components/ui/AnimatedButton';
+import AnimatedCard from '../components/ui/AnimatedCard';
+import AnimatedText from '../components/ui/AnimatedText';
+import ScrollReveal from '../components/ui/ScrollReveal';
+import { StaggerContainer, StaggerItem } from '../components/ui/StaggerContainer';
+
+gsap.registerPlugin(ScrollTrigger);
 
 const LandingPage = () => {
   const { user } = useContext(AuthContext);
   const navigate = useNavigate();
-  const containerRef = useRef(null);
-  const { scrollYProgress } = useScroll({ target: containerRef });
-  const scaleX = useSpring(scrollYProgress, { stiffness: 100, damping: 30 });
 
+  // Navigation link helper
   const getDashboardLink = () => {
     if (!user) return '/register';
     if (user.role === 'admin') return '/admin';
@@ -18,556 +33,557 @@ const LandingPage = () => {
     return '/patient';
   };
 
-  const fadeInUp = {
-    initial: { opacity: 0, y: 60 },
-    animate: { opacity: 1, y: 0 },
-    transition: { duration: 0.6 }
+  // Interactive AI Demo State
+  const [demoSymptoms, setDemoSymptoms] = useState(['Headache', 'Fever']);
+  const [demoDuration, setDemoDuration] = useState('2 days');
+  const [demoStep, setDemoStep] = useState('input'); // 'input' | 'analyzing' | 'result'
+
+  // FAQ Accordion State
+  const [openFaq, setOpenFaq] = useState(null);
+
+  // Hero Section GSAP Timeline
+  const heroRef = useRef(null);
+  useGSAP(() => {
+    if (!heroRef.current) return;
+    const tl = gsap.timeline();
+
+    tl.from('.hero-eyebrow', { opacity: 0, y: 15, duration: 0.5, ease: 'power2.out' })
+      .from('.hero-headline', { opacity: 0, y: 25, duration: 0.7, ease: 'power3.out' }, '-=0.3')
+      .from('.hero-desc', { opacity: 0, y: 20, duration: 0.5, ease: 'power2.out' }, '-=0.4')
+      .from('.hero-cta', { opacity: 0, y: 15, duration: 0.5, ease: 'power2.out' }, '-=0.3')
+      .from('.hero-disclaimer', { opacity: 0, duration: 0.4 }, '-=0.2')
+      .from('.hero-visual', { opacity: 0, scale: 0.96, duration: 0.8, ease: 'power3.out' }, '-=0.4');
+  }, { scope: heroRef });
+
+  const runDemoAnalysis = () => {
+    setDemoStep('analyzing');
+    setTimeout(() => {
+      setDemoStep('result');
+    }, 1500);
   };
 
-  const staggerContainer = {
-    animate: {
-      transition: {
-        staggerChildren: 0.1
-      }
-    }
-  };
-
-  const scaleIn = {
-    initial: { opacity: 0, scale: 0.8 },
-    animate: { opacity: 1, scale: 1 },
-    transition: { duration: 0.5 }
-  };
+  // Sample Vitals Demo Data
+  const sampleVitals = [
+    { time: '08:00', hr: 72, spo2: 99 },
+    { time: '10:00', hr: 75, spo2: 98 },
+    { time: '12:00', hr: 82, spo2: 99 },
+    { time: '14:00', hr: 78, spo2: 99 },
+    { time: '16:00', hr: 74, spo2: 98 },
+    { time: '18:00', hr: 71, spo2: 99 },
+  ];
 
   return (
-    <div ref={containerRef} className="min-h-screen bg-gradient-to-br from-themeLight via-white to-themeSoft text-themeDeep font-geist overflow-hidden relative selection:bg-themePrimary selection:text-white">
-      {/* Scroll Progress Indicator */}
-      <motion.div
-        className="fixed top-0 left-0 right-0 h-1 bg-gradient-to-r from-themePrimary via-themeDark to-themePrimary z-[100] origin-left"
-        style={{ scaleX }}
-      />
+    <div className="min-h-screen bg-slate-950 text-slate-100 font-geist overflow-x-hidden selection:bg-emerald-500 selection:text-white">
 
-      {/* Animated Background Mesh */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <motion.div
-          animate={{
-            x: [0, 100, 0],
-            y: [0, 50, 0],
-            scale: [1, 1.1, 1]
-          }}
-          transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-          className="absolute top-[-10%] left-[-10%] w-[60vw] h-[60vw] bg-gradient-to-br from-themeSoft/60 to-themePrimary/20 rounded-full filter blur-[120px] opacity-70"
-        />
-        <motion.div
-          animate={{
-            x: [0, -80, 0],
-            y: [0, 100, 0],
-            scale: [1, 1.2, 1]
-          }}
-          transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
-          className="absolute bottom-[-20%] right-[-10%] w-[70vw] h-[70vw] bg-gradient-to-tl from-themeMedium/40 to-themePrimary/10 rounded-full filter blur-[150px] opacity-50"
-        />
-        <motion.div
-          animate={{
-            x: [0, 60, 0],
-            y: [0, -80, 0],
-          }}
-          transition={{ duration: 18, repeat: Infinity, ease: "linear" }}
-          className="absolute top-[40%] left-[60%] w-[40vw] h-[40vw] bg-gradient-to-br from-white/40 to-themeSoft/30 rounded-full filter blur-[100px] opacity-40"
-        />
-      </div>
-
-      {/* Scrollable Container */}
-      <div className="relative z-10 pb-20">
-
-        {/* Premium Navigation */}
-        <motion.nav
-          initial={{ y: -100, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.8, ease: "easeOut" }}
-          className="sticky top-0 z-50 backdrop-blur-xl bg-white/60 border-b border-white/40 shadow-lg shadow-themePrimary/5"
-        >
-          <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
-            <Link to="/" className="flex items-center gap-3 group">
-              <motion.div
-                whileHover={{ rotate: 180, scale: 1.1 }}
-                transition={{ duration: 0.5 }}
-                className="w-10 h-10 bg-gradient-to-br from-themePrimary to-themeDark rounded-xl flex items-center justify-center shadow-neon group-hover:shadow-neon-hover"
-              >
-                <Activity className="text-white w-5 h-5" />
-              </motion.div>
-              <span className="text-2xl font-black tracking-tighter text-themeDeep group-hover:text-themePrimary transition-colors">MediConnect</span>
-            </Link>
-            <div className="flex items-center gap-3">
-              {!user ? (
-                <>
-                  <Link
-                    to="/login"
-                    className="hidden sm:flex px-5 py-2.5 rounded-full font-bold text-sm text-themeDark bg-white/80 hover:bg-white border border-themeMedium/40 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300"
-                  >
-                    Log In
-                  </Link>
-                  <Link
-                    to="/register"
-                    className="px-5 py-2.5 bg-gradient-to-r from-themePrimary to-themeDark text-white font-bold text-sm rounded-full shadow-neon hover:shadow-neon-hover transform hover:-translate-y-1 transition-all duration-300 flex items-center gap-2"
-                  >
-                    Get Started
-                    <ArrowRight size={16} />
-                  </Link>
-                </>
-              ) : (
-                <Link
-                  to={getDashboardLink()}
-                  className="px-5 py-2.5 bg-gradient-to-r from-themePrimary to-themeDark text-white font-bold text-sm rounded-full shadow-neon hover:shadow-neon-hover transform hover:-translate-y-1 transition-all duration-300 flex items-center gap-2"
-                >
-                  <Users size={16} />
-                  Dashboard
-                </Link>
-              )}
-            </div>
-          </div>
-        </motion.nav>
-
-        {/* Hero Section */}
-        <motion.main
-          initial={{ opacity: 0, y: 40 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 1, delay: 0.2 }}
-          className="relative pt-20 pb-32 px-4"
-        >
-          <div className="max-w-7xl mx-auto">
-            {/* Hero Badge */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.3 }}
-              className="flex justify-center mb-8"
-            >
-              <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/80 backdrop-blur-md border border-themePrimary/30 shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 group cursor-default">
-                <span className="relative flex h-2.5 w-2.5">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-themePrimary opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-themePrimary"></span>
-                </span>
-                <span className="text-sm font-black text-themeDark group-hover:text-themePrimary transition-colors">AI-Powered Healthcare Triage is Live</span>
-                <Sparkles className="w-4 h-4 text-themePrimary animate-pulse" />
-              </div>
-            </motion.div>
-
-            {/* Hero Heading */}
-            <motion.h1
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.4 }}
-              className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black mb-8 max-w-6xl mx-auto leading-[1.1] tracking-tight text-center"
-            >
-              <span className="text-themeDeep">Modern Telemedicine,</span>
-              <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-themePrimary via-themeDark to-themePrimary animate-gradient bg-300% italic">
-                Instantly Accessible.
-              </span>
-            </motion.h1>
-
-            {/* Hero Subtitle */}
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.5 }}
-              className="text-lg sm:text-xl text-themeDark/80 mb-12 max-w-2xl mx-auto leading-relaxed font-medium text-center"
-            >
-              Break the barriers to healthcare. Connect with doctors instantly, track your vitals via wearables, and let your AI health assistant process your symptoms continuously.
-            </motion.p>
-
-            {/* Hero CTA Buttons */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.6 }}
-              className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-16"
-            >
-              <Link
-                to={getDashboardLink()}
-                className="group px-8 py-4 bg-gradient-to-r from-themePrimary to-themeDark text-white font-black text-lg rounded-2xl shadow-neon hover:shadow-neon-hover transform hover:-translate-y-2 hover:scale-105 transition-all duration-300 flex items-center gap-3 overflow-hidden relative"
-              >
-                <span className="relative z-10">{user ? 'Go to Dashboard' : 'Get Started Free'}</span>
-                <ArrowRight className="relative z-10 group-hover:translate-x-2 transition-transform" size={20} />
-                <div className="absolute inset-0 bg-gradient-to-r from-themeDark to-themePrimary opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-              </Link>
-              {!user && (
-                <Link
-                  to="/login"
-                  className="group px-8 py-4 bg-white/80 backdrop-blur-md border-2 border-themePrimary/30 text-themeDark font-black text-lg rounded-2xl hover:bg-white hover:border-themePrimary hover:shadow-neon transform hover:-translate-y-2 transition-all duration-300 flex items-center gap-2"
-                >
-                  Sign In
-                </Link>
-              )}
-            </motion.div>
-
-            {/* Hero Stats */}
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.7 }}
-              className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-4xl mx-auto"
-            >
-              {[
-                { value: '50K+', label: 'Active Patients', icon: Users },
-                { value: '<50ms', label: 'Response Time', icon: Zap },
-                { value: '99.9%', label: 'Uptime SLA', icon: ShieldCheck },
-                { value: '24/7', label: 'AI Monitoring', icon: Activity },
-              ].map((stat, idx) => (
-                <motion.div
-                  key={idx}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 0.8 + idx * 0.1 }}
-                  className="bg-white/60 backdrop-blur-md p-6 rounded-3xl border border-white/50 shadow-glass text-center group hover:-translate-y-2 hover:shadow-neon transition-all duration-300"
-                >
-                  <stat.icon className="w-6 h-6 text-themePrimary mx-auto mb-3 group-hover:scale-110 transition-transform" />
-                  <p className="text-3xl font-black text-themeDeep mb-1">{stat.value}</p>
-                  <p className="text-xs font-black text-themeDark/60 uppercase tracking-widest">{stat.label}</p>
-                </motion.div>
-              ))}
-            </motion.div>
-          </div>
-        </motion.main>
-
-        {/* Features Section */}
-        <motion.section
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true, margin: "-100px" }}
-          transition={{ duration: 0.6 }}
-          className="relative py-24 px-4"
-        >
-          <div className="max-w-7xl mx-auto">
-            {/* Section Header */}
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
-              className="text-center mb-16"
-            >
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-themeSoft/50 rounded-full mb-6 border border-themePrimary/20">
-                <Zap className="w-4 h-4 text-themePrimary" />
-                <span className="text-xs font-black text-themePrimary uppercase tracking-widest">Powerful Features</span>
-              </div>
-              <h2 className="text-4xl sm:text-5xl md:text-6xl font-black text-themeDeep mb-6 tracking-tighter italic">
-                Future of <span className="text-transparent bg-clip-text bg-gradient-to-r from-themePrimary to-themeDark">Health Control</span>
-              </h2>
-              <p className="text-lg text-themeDark/70 max-w-2xl mx-auto font-medium">
-                Integrated seamlessly into a single encrypted dashboard.
-              </p>
-            </motion.div>
-
-            {/* Features Grid */}
-            <motion.div
-              variants={staggerContainer}
-              initial="initial"
-              whileInView="animate"
-              viewport={{ once: true }}
-              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-            >
-              {[
-                { icon: Activity, title: 'AI Symptom Checker', text: "OpenRouter integrations intelligently route your symptoms to elite medical models like LLaMA 3 or Claude 3.5 Sonnet.", gradient: 'from-green-400 to-emerald-600' },
-                { icon: HeartPulse, title: 'Real-time Wearables', text: "Live streaming WebSocket API integrations monitor your SpO2 and Heart rate. Alert doctors automatically on critical pulses.", gradient: 'from-red-400 to-rose-600' },
-                { icon: Video, title: 'Secured WebRTC Video', text: "Native HTML5 WebRTC supports massive zero-latency peer-to-peer clinical consultation video channels.", gradient: 'from-blue-400 to-indigo-600' },
-                { icon: Database, title: 'Immutable Records', text: "Your prescriptions, lab results, and visit summaries are securely hosted on a private Supabase PostgreSQL ledger.", gradient: 'from-purple-400 to-violet-600' },
-                { icon: ShieldCheck, title: 'Role-Based Access', text: "Doctors, Patients, and Admins are strictly scoped using AES-256 JWT Authorization to guarantee PII protection.", gradient: 'from-amber-400 to-orange-600' },
-                { icon: Sparkles, title: 'Daily AI Report', text: "Holistic Vitality scores generated every 24 hours based on your historic wearable telemetry and triage data.", gradient: 'from-pink-400 to-rose-600' },
-              ].map((feature, idx) => (
-                <motion.div
-                  key={idx}
-                  variants={fadeInUp}
-                  className="group relative bg-white/80 backdrop-blur-md p-8 rounded-[2.5rem] border border-white/50 shadow-glass hover:shadow-premium transition-all duration-500 overflow-hidden hover:-translate-y-2"
-                >
-                  {/* Gradient Background on Hover */}
-                  <div className={`absolute inset-0 bg-gradient-to-br ${feature.gradient} opacity-0 group-hover:opacity-10 transition-opacity duration-500`}></div>
-
-                  {/* Icon */}
-                  <div className="relative z-10 mb-6">
-                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-themeSoft to-themePrimary/20 flex items-center justify-center group-hover:scale-110 group-hover:rotate-6 transition-all duration-500 border border-themePrimary/20">
-                      <feature.icon className="w-8 h-8 text-themePrimary" />
-                    </div>
-                  </div>
-
-                  {/* Content */}
-                  <h3 className="relative z-10 text-xl font-black text-themeDeep mb-3 group-hover:text-themePrimary transition-colors">
-                    {feature.title}
-                  </h3>
-                  <p className="relative z-10 text-themeDark/70 leading-relaxed font-medium">
-                    {feature.text}
-                  </p>
-
-                  {/* Decorative Elements */}
-                  <div className="absolute top-4 right-4 w-20 h-20 bg-gradient-to-br from-themeSoft to-transparent rounded-full blur-2xl opacity-0 group-hover:opacity-50 transition-opacity duration-500"></div>
-                </motion.div>
-              ))}
-            </motion.div>
-          </div>
-        </motion.section>
-
-        {/* How It Works Section */}
-        <motion.section
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true, margin: "-50px" }}
-          transition={{ duration: 0.6 }}
-          className="relative py-24 px-4"
-        >
-          <div className="max-w-7xl mx-auto">
-            <div className="bg-gradient-to-br from-white/80 to-themeSoft/30 backdrop-blur-xl p-8 sm:p-12 lg:p-16 rounded-[3rem] shadow-premium border border-white/50">
-              {/* Section Header */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6 }}
-                className="text-center mb-16"
-              >
-                <div className="inline-flex items-center gap-2 px-4 py-2 bg-themeDeep/5 rounded-full mb-6 border border-themePrimary/20">
-                  <TrendingUp className="w-4 h-4 text-themePrimary" />
-                  <span className="text-xs font-black text-themePrimary uppercase tracking-widest">How It Works</span>
-                </div>
-                <h2 className="text-4xl sm:text-5xl md:text-6xl font-black text-themeDeep mb-4 tracking-tighter italic">
-                  A New <span className="text-transparent bg-clip-text bg-gradient-to-r from-themePrimary to-themeDark">Standard</span>
-                </h2>
-                <p className="text-sm text-themeDark/60 font-black uppercase tracking-widest">
-                  Frictionless Lifecycle Security
-                </p>
-              </motion.div>
-
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-                {/* Steps */}
-                <div className="space-y-8">
-                  {[
-                    { id: '01', title: 'Input Symptoms', text: 'MediConnect pings OpenRouter to evaluate your pain severity securely and logs it into the secure triage database.', icon: Activity },
-                    { id: '02', title: 'Connect Wearables', text: 'Smart watches sync to our WebSockets engine. If vitals drop, automated flags alert any reviewing doctor.', icon: HeartPulse },
-                    { id: '03', title: 'Start Consultation', text: 'Launch a P2P video call. Your browser links audio/video natively securely bypassing third-party servers.', icon: Video },
-                    { id: '04', title: 'Manage Records', text: 'Access prescriptions and summaries via the portal. Map nearby Pharmacies or download encrypted PDFs.', icon: FileText }
-                  ].map((step, idx) => (
-                    <motion.div
-                      key={idx}
-                      initial={{ opacity: 0, x: -30 }}
-                      whileInView={{ opacity: 1, x: 0 }}
-                      viewport={{ once: true }}
-                      transition={{ duration: 0.5, delay: idx * 0.1 }}
-                      className="flex items-start gap-6 group p-4 rounded-2xl hover:bg-white/50 transition-all duration-300"
-                    >
-                      <div className="flex-shrink-0 w-14 h-14 rounded-2xl bg-gradient-to-br from-themePrimary to-themeDark text-white font-black text-xl flex items-center justify-center shadow-lg group-hover:rotate-12 group-hover:scale-110 transition-all duration-300">
-                        {step.id}
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <step.icon className="w-5 h-5 text-themePrimary" />
-                          <h4 className="text-2xl font-black text-themeDeep group-hover:text-themePrimary transition-colors">{step.title}</h4>
-                        </div>
-                        <p className="text-themeDark/70 font-medium leading-relaxed">{step.text}</p>
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
-
-                {/* Visualizer Block */}
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.9, rotateY: -10 }}
-                  whileInView={{ opacity: 1, scale: 1, rotateY: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.8 }}
-                  className="relative"
-                >
-                  <div className="bg-white/60 backdrop-blur-md p-8 rounded-[3rem] border border-white/50 shadow-3d">
-                    <div className="space-y-6">
-                      {/* Mock Chat / Triage */}
-                      <motion.div
-                        animate={{ y: [0, -5, 0] }}
-                        transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-                        className="bg-white p-5 rounded-2xl shadow-lg border border-themePrimary/20"
-                      >
-                        <div className="flex items-center gap-3 mb-3">
-                          <div className="w-8 h-8 rounded-lg bg-themeSoft flex items-center justify-center">
-                            <Activity className="text-themePrimary w-4 h-4" />
-                          </div>
-                          <span className="font-black text-xs text-themeDeep uppercase tracking-widest">AI Triage Status</span>
-                        </div>
-                        <div className="h-2 bg-themeLight rounded-full overflow-hidden">
-                          <motion.div
-                            animate={{ width: ['70%', '75%', '70%'] }}
-                            transition={{ duration: 2, repeat: Infinity }}
-                            className="h-full bg-gradient-to-r from-themePrimary to-themeDark"
-                          ></motion.div>
-                        </div>
-                      </motion.div>
-
-                      {/* Mock Wearable */}
-                      <motion.div
-                        animate={{ y: [0, 5, 0] }}
-                        transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
-                        className="bg-white p-5 rounded-2xl shadow-lg border border-themeMedium/30"
-                      >
-                        <div className="flex items-center gap-3 mb-3">
-                          <div className="w-8 h-8 rounded-lg bg-red-100 flex items-center justify-center">
-                            <HeartPulse className="text-red-500 w-4 h-4" />
-                          </div>
-                          <span className="font-black text-xs text-themeDeep uppercase tracking-widest">SpO2 Level</span>
-                        </div>
-                        <div className="flex items-baseline gap-1">
-                          <span className="text-4xl font-black text-themeDeep">99</span>
-                          <span className="text-lg font-bold text-themeDark/40">%</span>
-                        </div>
-                      </motion.div>
-
-                      {/* Mock Video Request */}
-                      <motion.div
-                        animate={{ scale: [1, 1.02, 1], y: [0, -3, 0] }}
-                        transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-                        className="bg-gradient-to-br from-themeDeep to-themePrimary p-5 rounded-2xl shadow-neon border border-themePrimary/40"
-                      >
-                        <div className="flex items-center gap-3 text-white mb-4">
-                          <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center">
-                            <Video className="text-white w-4 h-4" />
-                          </div>
-                          <span className="font-bold text-sm">Dr. House is calling...</span>
-                        </div>
-                        <div className="flex gap-3">
-                          <div className="flex-1 py-2.5 bg-themePrimary rounded-xl text-xs font-black text-white text-center shadow-neon hover:bg-white/20 transition-colors cursor-pointer">
-                            ACCEPT
-                          </div>
-                          <div className="w-10 h-10 bg-red-500/30 rounded-xl text-xs font-black text-red-200 text-center flex items-center justify-center hover:bg-red-500/50 transition-colors cursor-pointer">
-                            ✕
-                          </div>
-                        </div>
-                      </motion.div>
-                    </div>
-                  </div>
-
-                  {/* Decorative Elements */}
-                  <div className="absolute -top-4 -right-4 w-24 h-24 bg-gradient-to-br from-themePrimary/30 to-transparent rounded-full blur-2xl animate-pulse"></div>
-                  <div className="absolute -bottom-4 -left-4 w-32 h-32 bg-gradient-to-tr from-themeSoft/40 to-transparent rounded-full blur-2xl animate-pulse" style={{ animationDelay: '1s' }}></div>
-                </motion.div>
-              </div>
-            </div>
-          </div>
-        </motion.section>
-      </div>
-
-      {/* Trust Badges Section */}
-      <motion.section
-        initial={{ opacity: 0, y: 30 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.6 }}
-        className="py-16 px-4 border-t border-themeMedium/20"
+      {/* 1. STICKY NAVBAR */}
+      <motion.nav 
+        initial={{ y: -80, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.5 }}
+        className="sticky top-0 z-50 bg-slate-950/80 backdrop-blur-xl border-b border-slate-800/80 shadow-2xl"
       >
-        <div className="max-w-4xl mx-auto text-center">
-          <p className="text-xs font-black text-themeDark/50 uppercase tracking-widest mb-8">
-            Trusted by Healthcare Professionals Worldwide
+        <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+          <Link to="/" className="flex items-center gap-3 group">
+            <div className="w-10 h-10 bg-emerald-500 rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-500/20 group-hover:scale-105 transition-transform">
+              <Activity className="text-slate-950 w-5 h-5" />
+            </div>
+            <span className="text-xl font-black tracking-tight text-white group-hover:text-emerald-400 transition-colors">MediConnect</span>
+          </Link>
+
+          <div className="hidden lg:flex items-center gap-8 text-xs font-bold uppercase tracking-wider text-slate-300">
+            <a href="#how-it-works" className="hover:text-emerald-400 transition-colors">How It Works</a>
+            <a href="#patients" className="hover:text-emerald-400 transition-colors">For Patients</a>
+            <a href="#doctors" className="hover:text-emerald-400 transition-colors">For Doctors</a>
+            <a href="#features" className="hover:text-emerald-400 transition-colors">Features</a>
+            <a href="#security" className="hover:text-emerald-400 transition-colors">Security</a>
+            <a href="#faq" className="hover:text-emerald-400 transition-colors">FAQ</a>
+          </div>
+
+          <div className="flex items-center gap-3">
+            {!user ? (
+              <>
+                <Link to="/login">
+                  <AnimatedButton variant="ghost" size="sm" className="text-slate-300 hover:text-white">
+                    Log In
+                  </AnimatedButton>
+                </Link>
+                <Link to="/register">
+                  <AnimatedButton variant="primary" size="sm" icon={ArrowRight} iconPosition="right">
+                    Get Started
+                  </AnimatedButton>
+                </Link>
+              </>
+            ) : (
+              <Link to={getDashboardLink()}>
+                <AnimatedButton variant="primary" size="sm" icon={Users}>
+                  Dashboard
+                </AnimatedButton>
+              </Link>
+            )}
+          </div>
+        </div>
+      </motion.nav>
+
+      {/* 2. HERO SECTION */}
+      <section ref={heroRef} className="relative pt-16 pb-24 px-6 overflow-hidden">
+        {/* Background glow */}
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-emerald-500/10 rounded-full blur-[140px] pointer-events-none" />
+
+        <div className="max-w-7xl mx-auto text-center space-y-8 relative z-10">
+          <div className="hero-eyebrow inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-black uppercase tracking-widest">
+            <Sparkles size={14} className="animate-pulse" />
+            Connected AI-Assisted Telehealth Platform
+          </div>
+
+          <h1 className="hero-headline text-5xl sm:text-6xl md:text-7xl font-black tracking-tight leading-[1.08] text-white max-w-5xl mx-auto">
+            Healthcare,<br />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-300 to-emerald-500 italic">
+              connected around you.
+            </span>
+          </h1>
+
+          <p className="hero-desc text-base sm:text-xl text-slate-300 max-w-2xl mx-auto font-medium leading-relaxed">
+            AI-assisted triage guidance. Verified doctors. Real-time video consultations. Immutable medical records. One connected healthcare experience.
           </p>
-          <div className="flex flex-wrap justify-center items-center gap-8 md:gap-12">
+
+          <div className="hero-cta flex flex-col sm:flex-row gap-4 justify-center items-center">
+            <Link to={getDashboardLink()}>
+              <AnimatedButton variant="primary" size="lg" icon={ArrowRight} iconPosition="right">
+                {user ? 'Go to Workspace' : 'Get Started'}
+              </AnimatedButton>
+            </Link>
+            <a href="#how-it-works">
+              <AnimatedButton variant="secondary" size="lg">
+                See How It Works
+              </AnimatedButton>
+            </a>
+          </div>
+
+          <p className="hero-disclaimer text-[11px] font-bold text-slate-400 max-w-lg mx-auto uppercase tracking-wider">
+            Disclaimer: MediConnect provides AI-assisted healthcare information for decision support. It does not replace professional medical diagnosis or emergency care.
+          </p>
+
+          {/* Hero Visual Composition */}
+          <div className="hero-visual pt-8">
+            <div className="p-4 bg-slate-900/90 rounded-[2.5rem] border border-slate-800 shadow-2xl max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-4 text-left">
+              <div className="bg-slate-950 p-5 rounded-2xl border border-slate-800/80 space-y-3">
+                <div className="flex items-center gap-2 text-emerald-400 text-xs font-black uppercase">
+                  <Sparkles size={16} /> AI Triage Signal
+                </div>
+                <p className="text-sm font-bold text-white">Symptoms: Sharp chest discomfort, dyspnea</p>
+                <div className="px-3 py-1 bg-red-500/20 text-red-400 border border-red-500/40 rounded-full text-[10px] font-black uppercase tracking-wider w-fit">
+                  Critical Priority • Escalated
+                </div>
+              </div>
+
+              <div className="bg-slate-950 p-5 rounded-2xl border border-slate-800/80 space-y-3">
+                <div className="flex items-center gap-2 text-emerald-400 text-xs font-black uppercase">
+                  <UserCheck size={16} /> Verified Clinician
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white font-black flex items-center justify-center text-sm">
+                    DR
+                  </div>
+                  <div>
+                    <h5 className="font-bold text-white text-sm">Dr. Maya Rao, MD</h5>
+                    <p className="text-[10px] text-slate-400 font-bold uppercase">Cardiology Specialist</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-slate-950 p-5 rounded-2xl border border-slate-800/80 space-y-3">
+                <div className="flex items-center gap-2 text-emerald-400 text-xs font-black uppercase">
+                  <HeartPulse size={16} /> Live Vitals Stream
+                </div>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-3xl font-black text-white">74</span>
+                  <span className="text-xs font-bold text-slate-400">BPM</span>
+                  <span className="ml-auto text-emerald-400 text-xs font-bold">99% SpO₂</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 3. TRUST & VALUE STRIP */}
+      <section className="py-10 border-y border-slate-800/80 bg-slate-900/40">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
             {[
-              { label: 'HIPAA Compliant', icon: ShieldCheck },
-              { label: 'End-to-End Encrypted', icon: Lock },
-              { label: '50,000+ Patients', icon: Users },
-              { label: '500+ Hospitals', icon: Database },
-            ].map((badge, idx) => (
-              <motion.div
-                key={idx}
-                whileHover={{ scale: 1.05 }}
-                className="flex items-center gap-3 px-6 py-4 bg-white/60 backdrop-blur-md rounded-2xl border border-white/50 shadow-sm"
-              >
-                <badge.icon className="w-6 h-6 text-themePrimary" />
-                <span className="font-black text-themeDeep text-sm">{badge.label}</span>
-              </motion.div>
+              { label: 'AI-Assisted Triage', icon: Sparkles },
+              { label: 'Verified Doctors', icon: Stethoscope },
+              { label: 'Secure Medical Records', icon: Database },
+              { label: 'Real-Time Vitals', icon: HeartPulse }
+            ].map((item, i) => (
+              <div key={i} className="flex items-center justify-center gap-3 text-slate-300">
+                <item.icon className="w-5 h-5 text-emerald-400 shrink-0" />
+                <span className="text-xs font-black uppercase tracking-wider">{item.label}</span>
+              </div>
             ))}
           </div>
         </div>
-      </motion.section>
+      </section>
 
-      {/* CTA Section */}
-      <motion.section
-        initial={{ opacity: 0, y: 30 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.8 }}
-        className="py-24 px-4"
-      >
-        <div className="max-w-5xl mx-auto">
-          <div className="relative bg-gradient-to-br from-themePrimary via-themeDark to-themePrimary p-12 sm:p-16 rounded-[3rem] shadow-premium overflow-hidden text-center">
-            {/* Animated Background Pattern */}
-            <div className="absolute inset-0 opacity-10">
-              <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_1px_1px,_white_1px,_transparent_0)] bg-[length:20px_20px]"></div>
-            </div>
-
-            <div className="relative z-10">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6 }}
-              >
-                <h2 className="text-4xl sm:text-5xl md:text-6xl font-black text-white mb-6 tracking-tighter">
-                  Ready to Transform Your Healthcare Experience?
-                </h2>
-                <p className="text-lg text-white/80 mb-10 max-w-2xl mx-auto font-medium">
-                  Join thousands of patients and doctors who trust MediConnect for secure, instant, and AI-powered medical care.
-                </p>
-                <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                  <Link
-                    to="/register"
-                    className="group px-8 py-4 bg-white text-themeDeep font-black text-lg rounded-2xl shadow-lg hover:shadow-xl transform hover:-translate-y-2 transition-all duration-300 flex items-center justify-center gap-2"
-                  >
-                    Start Free Trial
-                    <ArrowRight className="group-hover:translate-x-2 transition-transform" size={20} />
-                  </Link>
-                  <Link
-                    to="/login"
-                    className="px-8 py-4 bg-transparent text-white font-black text-lg rounded-2xl border-2 border-white/50 hover:bg-white/10 hover:border-white transition-all duration-300"
-                  >
-                    Existing User? Login
-                  </Link>
-                </div>
-              </motion.div>
-            </div>
-
-            {/* Decorative Circles */}
-            <motion.div
-              animate={{ rotate: 360 }}
-              transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
-              className="absolute -top-32 -right-32 w-64 h-64 rounded-full border-4 border-white/10"
-            />
-            <motion.div
-              animate={{ rotate: -360 }}
-              transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
-              className="absolute -bottom-24 -left-24 w-48 h-48 rounded-full border-4 border-white/10"
-            />
-          </div>
-        </div>
-      </motion.section>
-
-      {/* Footer */}
-      <footer className="py-12 px-4 border-t border-themeMedium/20">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-6">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-themePrimary to-themeDark rounded-xl flex items-center justify-center shadow-neon">
-                <Activity className="text-white w-5 h-5" />
-              </div>
-              <span className="text-xl font-black tracking-tighter text-themeDeep">MediConnect</span>
-            </div>
-            <div className="flex flex-wrap justify-center gap-6 text-sm font-bold text-themeDark/60">
-              <a href="#" className="hover:text-themePrimary transition-colors">Privacy Policy</a>
-              <a href="#" className="hover:text-themePrimary transition-colors">Terms of Service</a>
-              <a href="#" className="hover:text-themePrimary transition-colors">Contact Support</a>
-              <a href="#" className="hover:text-themePrimary transition-colors">Security</a>
-            </div>
-            <p className="text-xs font-medium text-themeDark/40">
-              © {new Date().getFullYear()} MediConnect. All rights reserved.
+      {/* 4. WHAT IS MEDICONNECT? */}
+      <section className="py-24 px-6 relative">
+        <div className="max-w-7xl mx-auto space-y-12">
+          <ScrollReveal className="text-center space-y-4 max-w-3xl mx-auto">
+            <span className="text-xs font-black uppercase tracking-widest text-emerald-400">Platform Vision</span>
+            <h2 className="text-3xl sm:text-5xl font-black tracking-tight text-white">
+              One connected place for your complete healthcare journey.
+            </h2>
+            <p className="text-slate-400 text-base font-medium">
+              MediConnect eliminates friction between symptom onset, triage assessment, doctor discovery, consultation, medical records, and continuous vital monitoring.
             </p>
+          </ScrollReveal>
+
+          {/* 7-Step Horizontal Flow */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-3">
+            {[
+              { step: '01', label: 'Symptoms', desc: 'Describe discomfort' },
+              { step: '02', label: 'Triage', desc: 'AI urgency assessment' },
+              { step: '03', label: 'Doctor', desc: 'Match specialist' },
+              { step: '04', label: 'Consult', desc: 'P2P Telehealth call' },
+              { step: '05', label: 'Prescribe', desc: 'Digital Rx issued' },
+              { step: '06', label: 'Records', desc: 'Archived to EMR' },
+              { step: '07', label: 'Follow-up', desc: 'Continuous telemetry' }
+            ].map((item, i) => (
+              <ScrollReveal key={i} delay={i * 0.08} className="p-4 bg-slate-900/60 rounded-2xl border border-slate-800 text-center space-y-2 hover:border-emerald-500/40 transition-all">
+                <span className="text-xs font-black text-emerald-400">{item.step}</span>
+                <h4 className="font-bold text-white text-sm">{item.label}</h4>
+                <p className="text-[10px] font-bold text-slate-500">{item.desc}</p>
+              </ScrollReveal>
+            ))}
           </div>
         </div>
-      </footer>
+      </section>
+
+      {/* 5. THE HEALTHCARE PROBLEM */}
+      <section className="py-24 px-6 bg-slate-900/30 border-y border-slate-800/80">
+        <div className="max-w-7xl mx-auto space-y-12">
+          <ScrollReveal className="text-center space-y-4 max-w-2xl mx-auto">
+            <span className="text-xs font-black uppercase tracking-widest text-red-400">The Problem</span>
+            <h2 className="text-3xl sm:text-4xl font-black tracking-tight text-white">
+              Traditional healthcare is fragmented & confusing.
+            </h2>
+          </ScrollReveal>
+
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            {[
+              { title: 'Uncertainty', desc: 'Where should I start when symptoms appear unexpectedly?' },
+              { title: 'Discovery', desc: 'Which doctor is appropriate for my specific medical condition?' },
+              { title: 'Access', desc: 'How can I connect quickly without waiting weeks for an appointment?' },
+              { title: 'Continuity', desc: 'Where are my prescriptions, lab results, and consultation records stored?' }
+            ].map((prob, i) => (
+              <ScrollReveal key={i} delay={i * 0.1} className="p-6 bg-slate-900 rounded-3xl border border-red-500/20 space-y-3">
+                <div className="w-8 h-8 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 font-black flex items-center justify-center text-xs">
+                  0{i+1}
+                </div>
+                <h4 className="font-black text-white text-lg">{prob.title}</h4>
+                <p className="text-xs text-slate-400 font-medium leading-relaxed">{prob.desc}</p>
+              </ScrollReveal>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* 6. HOW MEDICONNECT WORKS (5 STEPS) */}
+      <section id="how-it-works" className="py-24 px-6">
+        <div className="max-w-7xl mx-auto space-y-16">
+          <ScrollReveal className="text-center space-y-4 max-w-2xl mx-auto">
+            <span className="text-xs font-black uppercase tracking-widest text-emerald-400">Step-by-Step Experience</span>
+            <h2 className="text-3xl sm:text-5xl font-black tracking-tight text-white">How MediConnect Works</h2>
+          </ScrollReveal>
+
+          <div className="space-y-8 max-w-4xl mx-auto">
+            {[
+              { step: 'Step 1', title: 'Start Your Account', desc: 'Create an account and build your basic health profile securely.', icon: Compass },
+              { step: 'Step 2', title: 'Understand Symptoms', desc: 'Use AI-assisted triage to organize symptoms and evaluate urgency signals.', icon: Sparkles },
+              { step: 'Step 3', title: 'Connect With Doctors', desc: 'Explore verified doctor profiles filtered by specialty, experience, and availability.', icon: Stethoscope },
+              { step: 'Step 4', title: 'Consult Online', desc: 'Book and attend an encrypted P2P video consultation.', icon: Video },
+              { step: 'Step 5', title: 'Continue Care', desc: 'Access prescriptions, medical records, and continuous vitals from one unified vault.', icon: Database }
+            ].map((s, i) => (
+              <ScrollReveal key={i} delay={i * 0.1} className="p-8 bg-slate-900 rounded-3xl border border-slate-800 flex items-start gap-6 hover:border-emerald-500/50 transition-all">
+                <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center justify-center shrink-0">
+                  <s.icon className="w-7 h-7" />
+                </div>
+                <div className="space-y-1">
+                  <span className="text-xs font-black uppercase tracking-widest text-emerald-400">{s.step}</span>
+                  <h3 className="text-xl font-black text-white">{s.title}</h3>
+                  <p className="text-sm font-medium text-slate-400 leading-relaxed">{s.desc}</p>
+                </div>
+              </ScrollReveal>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* 7. AI-ASSISTED TRIAGE SECTION & INTERACTIVE DEMO */}
+      <section className="py-24 px-6 bg-slate-900/40 border-y border-slate-800/80">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+          <ScrollReveal className="space-y-6">
+            <span className="text-xs font-black uppercase tracking-widest text-emerald-400">Intelligent Triage Engine</span>
+            <h2 className="text-3xl sm:text-5xl font-black tracking-tight text-white leading-tight">
+              Start with your symptoms.<br />Get a clearer next step.
+            </h2>
+            <p className="text-slate-300 text-base font-medium leading-relaxed">
+              Describe what you are experiencing. MediConnect organizes symptom signals, checks emergency red flags, and provides structured recommendations to guide your next step with a healthcare professional.
+            </p>
+            <div className="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl text-emerald-300 text-xs font-bold">
+              Note: AI triage is an assistive decision-support tool. It does not provide medical diagnosis.
+            </div>
+          </ScrollReveal>
+
+          {/* Interactive AI Triage Demo Widget */}
+          <ScrollReveal className="bg-slate-900 p-8 rounded-[2.5rem] border border-slate-800 shadow-2xl space-y-6">
+            <div className="flex justify-between items-center border-b border-slate-800 pb-4">
+              <span className="text-xs font-black uppercase tracking-widest text-emerald-400 flex items-center gap-2">
+                <Sparkles size={16} /> Interactive Triage Demo
+              </span>
+              <span className="text-[10px] font-bold text-slate-500 uppercase">Demo Preview</span>
+            </div>
+
+            {demoStep === 'input' && (
+              <div className="space-y-4">
+                <label className="text-xs font-bold text-slate-300 uppercase">Select Symptoms</label>
+                <div className="flex flex-wrap gap-2">
+                  {['Headache', 'Fever', 'Shortness of breath', 'Chest pain', 'Cough'].map(s => (
+                    <button
+                      key={s}
+                      onClick={() => {
+                        setDemoSymptoms(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s]);
+                      }}
+                      className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border ${
+                        demoSymptoms.includes(s)
+                          ? 'bg-emerald-500 text-slate-950 border-emerald-400 font-black'
+                          : 'bg-slate-950 text-slate-300 border-slate-800 hover:border-slate-700'
+                      }`}
+                    >
+                      {demoSymptoms.includes(s) ? '✓ ' : '+ '}{s}
+                    </button>
+                  ))}
+                </div>
+
+                <AnimatedButton onClick={runDemoAnalysis} variant="primary" size="md" className="w-full">
+                  Run Demo Triage Analysis
+                </AnimatedButton>
+              </div>
+            )}
+
+            {demoStep === 'analyzing' && (
+              <div className="py-12 text-center space-y-4">
+                <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center animate-spin text-emerald-400 mx-auto">
+                  <Sparkles size={24} />
+                </div>
+                <p className="text-sm font-bold text-white">Analyzing symptom signals & emergency red flags...</p>
+              </div>
+            )}
+
+            {demoStep === 'result' && (
+              <div className="space-y-4">
+                <div className="p-4 bg-emerald-950/60 border border-emerald-500/40 rounded-2xl space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs font-black uppercase text-emerald-400">Severity</span>
+                    <span className="px-3 py-1 bg-amber-400 text-slate-950 font-black text-[10px] rounded-full uppercase">
+                      {demoSymptoms.includes('Chest pain') || demoSymptoms.includes('Shortness of breath') ? 'Critical / Immediate' : 'Medium / Routine'}
+                    </span>
+                  </div>
+                  <p className="text-sm font-bold text-white">
+                    {demoSymptoms.includes('Chest pain')
+                      ? 'Seek immediate emergency medical care at the nearest ER.'
+                      : 'Schedule a consultation with a General Practitioner or Cardiologist.'}
+                  </p>
+                </div>
+                <AnimatedButton onClick={() => setDemoStep('input')} variant="outline" size="sm" className="w-full">
+                  Reset Demo
+                </AnimatedButton>
+              </div>
+            )}
+          </ScrollReveal>
+        </div>
+      </section>
+
+      {/* 8. DOCTOR DISCOVERY & APPOINTMENT SHOWCASE */}
+      <section id="patients" className="py-24 px-6">
+        <div className="max-w-7xl mx-auto space-y-16">
+          <ScrollReveal className="text-center space-y-4 max-w-2xl mx-auto">
+            <span className="text-xs font-black uppercase tracking-widest text-emerald-400">Doctor Discovery & Telehealth</span>
+            <h2 className="text-3xl sm:text-5xl font-black tracking-tight text-white">Find care that fits your needs.</h2>
+          </ScrollReveal>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {[
+              { name: 'Dr. Maya Rao', spec: 'Cardiology', exp: '12 Years Exp', fee: '$50', rating: '4.9' },
+              { name: 'Dr. James Chen', spec: 'General Medicine', exp: '8 Years Exp', fee: '$40', rating: '4.8' },
+              { name: 'Dr. Sarah Jenkins', spec: 'Pediatrics', exp: '15 Years Exp', fee: '$60', rating: '5.0' }
+            ].map((doc, i) => (
+              <AnimatedCard key={i} className="bg-slate-900 border-slate-800 text-slate-100 p-6 space-y-4">
+                <div className="flex items-center gap-4">
+                  <div className="w-14 h-14 rounded-2xl bg-emerald-600 text-white font-black text-xl flex items-center justify-center">
+                    {doc.name[4]}
+                  </div>
+                  <div>
+                    <h4 className="font-black text-white text-base">{doc.name}</h4>
+                    <p className="text-xs font-bold text-emerald-400">{doc.spec}</p>
+                  </div>
+                </div>
+                <div className="space-y-1 text-xs font-bold text-slate-400">
+                  <div className="flex justify-between"><span>Experience:</span> <span className="text-white">{doc.exp}</span></div>
+                  <div className="flex justify-between"><span>Rating:</span> <span className="text-amber-400">⭐ {doc.rating}</span></div>
+                  <div className="flex justify-between"><span>Fee:</span> <span className="text-white">{doc.fee}</span></div>
+                </div>
+                <AnimatedButton variant="primary" size="sm" className="w-full">
+                  Book Appointment
+                </AnimatedButton>
+              </AnimatedCard>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* 9. LIVE VITALS & RECHARTS STREAM */}
+      <section className="py-24 px-6 bg-slate-900/40 border-y border-slate-800/80">
+        <div className="max-w-7xl mx-auto space-y-12">
+          <ScrollReveal className="text-center space-y-4 max-w-2xl mx-auto">
+            <span className="text-xs font-black uppercase tracking-widest text-emerald-400">Biometric Monitoring</span>
+            <h2 className="text-3xl sm:text-5xl font-black tracking-tight text-white">Understand your health data over time.</h2>
+          </ScrollReveal>
+
+          <div className="bg-slate-900 p-8 rounded-[2.5rem] border border-slate-800 shadow-2xl space-y-6 max-w-4xl mx-auto">
+            <div className="flex justify-between items-center">
+              <div>
+                <h4 className="font-black text-white text-lg">Heart Rate & SpO₂ Stream</h4>
+                <p className="text-xs font-bold text-slate-400">Live telemetry snapshot</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></div>
+                <span className="text-xs font-black text-emerald-400 uppercase">Stream Active</span>
+              </div>
+            </div>
+
+            <div className="h-64 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={sampleVitals}>
+                  <defs>
+                    <linearGradient id="colorHr" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#10B981" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="#10B981" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <XAxis dataKey="time" stroke="#64748b" tick={{ fill: '#94a3b8', fontSize: 12 }} />
+                  <YAxis stroke="#64748b" tick={{ fill: '#94a3b8', fontSize: 12 }} />
+                  <Tooltip contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '16px' }} />
+                  <Area type="monotone" dataKey="hr" stroke="#10B981" fillOpacity={1} fill="url(#colorHr)" strokeWidth={3} />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 10. AI SAFETY & ETHICS */}
+      <section id="security" className="py-24 px-6">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+          <ScrollReveal className="space-y-6">
+            <span className="text-xs font-black uppercase tracking-widest text-emerald-400">AI Safety & Governance</span>
+            <h2 className="text-3xl sm:text-5xl font-black tracking-tight text-white leading-tight">
+              AI should assist care,<br />not replace clinical judgment.
+            </h2>
+            <p className="text-slate-300 text-base font-medium leading-relaxed">
+              MediConnect enforces explicit boundaries: AI organizes symptom context and flags potential emergency signals, while licensed clinicians retain full responsibility for clinical decisions.
+            </p>
+          </ScrollReveal>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <div className="p-6 bg-emerald-950/40 border border-emerald-500/30 rounded-3xl space-y-2">
+              <CheckCircle2 className="w-8 h-8 text-emerald-400" />
+              <h4 className="font-black text-white text-lg">AI Triage Assist</h4>
+              <p className="text-xs font-medium text-slate-300 leading-relaxed">Organizes symptoms, identifies urgency levels, and highlights red flags for clinician review.</p>
+            </div>
+            <div className="p-6 bg-red-950/40 border border-red-500/30 rounded-3xl space-y-2">
+              <AlertTriangle className="w-8 h-8 text-red-400" />
+              <h4 className="font-black text-white text-lg">Not Autonomous Diagnosis</h4>
+              <p className="text-xs font-medium text-slate-300 leading-relaxed">Does not prescribe medication or deliver final medical diagnosis without clinician approval.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 11. FAQ ACCORDION */}
+      <section id="faq" className="py-24 px-6 bg-slate-900/40 border-y border-slate-800/80">
+        <div className="max-w-4xl mx-auto space-y-12">
+          <ScrollReveal className="text-center space-y-4">
+            <span className="text-xs font-black uppercase tracking-widest text-emerald-400">Frequently Asked Questions</span>
+            <h2 className="text-3xl sm:text-5xl font-black tracking-tight text-white">Got Questions? We have answers.</h2>
+          </ScrollReveal>
+
+          <div className="space-y-4">
+            {[
+              { q: 'What is MediConnect?', a: 'MediConnect is an AI-assisted healthcare accessibility platform connecting patients with triage assessment, doctor discovery, video consultations, and EMR records.' },
+              { q: 'How does AI triage work?', a: 'AI triage analyzes patient symptoms against emergency safety rules and clinical guidelines to recommend urgency levels (Immediate, Routine, Self Care).' },
+              { q: 'Does MediConnect replace my doctor?', a: 'No. MediConnect AI is an assistive decision-support layer. Professional clinicians make all official diagnoses and prescriptions.' },
+              { q: 'How do video consultations work?', a: 'Consultations run over encrypted WebRTC rooms directly between patient and doctor browsers with zero-latency video.' }
+            ].map((faq, i) => (
+              <div key={i} className="bg-slate-900 rounded-2xl border border-slate-800 overflow-hidden">
+                <button
+                  onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                  className="w-full p-6 text-left font-black text-white text-base flex justify-between items-center"
+                >
+                  <span>{faq.q}</span>
+                  <ChevronDown className={`w-5 h-5 text-emerald-400 transition-transform ${openFaq === i ? 'rotate-180' : ''}`} />
+                </button>
+                <AnimatePresence>
+                  {openFaq === i && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      className="px-6 pb-6 text-sm font-medium text-slate-400 leading-relaxed"
+                    >
+                      {faq.a}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* 12. FINAL CTA & FOOTER */}
+      <section className="py-24 px-6 text-center space-y-8 bg-gradient-to-b from-slate-950 to-slate-900">
+        <div className="max-w-4xl mx-auto space-y-6">
+          <h2 className="text-4xl sm:text-6xl font-black text-white tracking-tight">
+            Your next healthcare step,<br /><span className="text-emerald-400 italic">connected.</span>
+          </h2>
+          <p className="text-slate-400 font-medium text-base">
+            Start your MediConnect journey today for instant AI triage, doctor access, and secure medical records.
+          </p>
+          <div className="pt-4">
+            <Link to="/register">
+              <AnimatedButton variant="primary" size="lg" icon={ArrowRight} iconPosition="right">
+                Start Free Trial
+              </AnimatedButton>
+            </Link>
+          </div>
+        </div>
+
+        <footer className="pt-16 border-t border-slate-800/80 max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6 text-xs text-slate-500 font-bold">
+          <div className="flex items-center gap-2 text-white font-black">
+            <Activity className="text-emerald-400" /> MediConnect © {new Date().getFullYear()}
+          </div>
+          <div className="flex gap-6 uppercase tracking-wider">
+            <a href="#how-it-works" className="hover:text-emerald-400">How It Works</a>
+            <a href="#security" className="hover:text-emerald-400">Security</a>
+            <a href="#faq" className="hover:text-emerald-400">FAQ</a>
+          </div>
+          <p className="text-[10px] uppercase">Encrypted • AI Decision Support Platform</p>
+        </footer>
+      </section>
+
     </div>
   );
 };
 
 export default LandingPage;
-
