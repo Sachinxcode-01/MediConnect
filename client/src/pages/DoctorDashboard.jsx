@@ -43,9 +43,9 @@ const DoctorDashboard = () => {
 
   const socketRef = useRef();
 
-  const fetchData = async () => {
+  const fetchData = async (showLoading = true) => {
     try {
-      setLoading(true);
+      if (showLoading) setLoading(true);
       const [queueRes, patientsRes, prescriptionsRes, appointmentsRes] = await Promise.all([
         api.get('/api/triage/queue').catch(() => ({ data: { data: [] } })),
         api.get('/api/patients').catch(() => ({ data: { data: [] } })),
@@ -62,16 +62,15 @@ const DoctorDashboard = () => {
       setPatients(patientData);
       setPrescriptions(rxData);
       setAppointments(aptData);
-    } catch (e) {
-      console.error(e);
+    } catch (_err) {
       toast.error('Failed to load dashboard data');
     } finally {
-      setLoading(false);
+      if (showLoading) setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchData();
+    fetchData(false);
 
     socketRef.current = io(import.meta.env.VITE_API_URL || 'http://localhost:5000');
     socketRef.current.on('new-triage-entry', (data) => {
@@ -79,15 +78,15 @@ const DoctorDashboard = () => {
       toast('New Patient in Triage Queue!', { icon: '🚨', position: 'top-right' });
     });
 
-    return () => socketRef.current.disconnect();
+    return () => socketRef.current?.disconnect();
   }, []);
 
   const handleClaimTriage = async (triageId) => {
     try {
       await api.put(`/api/triage/${triageId}/assign`);
       toast.success('Case assigned to your workspace');
-      fetchData();
-    } catch (e) {
+      fetchData(false);
+    } catch (_err) {
       toast.error('Failed to claim case');
     }
   };
@@ -103,8 +102,8 @@ const DoctorDashboard = () => {
       toast.success('Clinical note added');
       setClinicalNoteText('');
       setIsNoteModalOpen(false);
-      fetchData();
-    } catch (e) {
+      fetchData(false);
+    } catch (_err) {
       toast.error('Failed to add clinical note');
     }
   };
@@ -131,7 +130,7 @@ const DoctorDashboard = () => {
         severity: entry.severity
       });
       setAnalysisText(res.data.analysis);
-    } catch (e) {
+    } catch (_err) {
       toast.error('AI Analysis failed');
     } finally {
       setIsAnalyzing(false);
@@ -150,7 +149,7 @@ const DoctorDashboard = () => {
       setIsPrescriptionModalOpen(false);
       setPrescriptions([res.data?.data || res.data, ...prescriptions]);
       setNewPrescription({ patientId: '', medication: '', dosage: '', instructions: '', duration: '', frequency: 'Once daily' });
-    } catch (e) {
+    } catch (_err) {
       toast.error('Failed to issue prescription');
     }
   };
@@ -417,7 +416,7 @@ const DoctorDashboard = () => {
                            </div>
                            <div>
                               <h4 className="font-black text-themeDeep tracking-tight group-hover:text-themePrimary transition-colors">{p.name || 'Anonymous Patient'}</h4>
-                              <p className="text-[10px] font-bold text-themeDark/40 uppercase uppercase">{p.email}</p>
+                              <p className="text-[10px] font-bold text-themeDark/40 uppercase">{p.email}</p>
                            </div>
                         </div>
                         <div className="space-y-2 mb-4">
@@ -466,7 +465,7 @@ const DoctorDashboard = () => {
                     <tbody className="divide-y divide-themeMedium/10">
                       {prescriptions.length === 0 ? (
                         <tr><td colSpan="4" className="px-8 py-20 text-center font-bold text-themeDark/40 italic">No prescriptions found in the ledger.</td></tr>
-                      ) : prescriptions.map((p, idx) => (
+                      ) : prescriptions.map((p) => (
                         <tr key={p._id} className="hover:bg-themeSoft/20 transition-colors">
                           <td className="px-8 py-6 font-bold text-themeDeep/50">{new Date(p.created_at).toLocaleDateString()}</td>
                           <td className="px-8 py-6 font-black">{p.patientId?.name || 'N/A'}</td>
