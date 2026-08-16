@@ -17,6 +17,7 @@ import {
 } from '@livekit/components-react';
 import { Track } from 'livekit-client';
 import '@livekit/components-styles';
+import AnimatedButton from '../components/ui/AnimatedButton';
 
 const VideoConsultation = () => {
   const { user } = useContext(AuthContext);

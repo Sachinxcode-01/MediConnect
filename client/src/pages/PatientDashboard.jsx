@@ -205,16 +205,23 @@ const PatientDashboard = () => {
     };
   }, [activeTab, user._id, selectedSpecialty]);
 
+  const [isAnalyzingTriage, setIsAnalyzingTriage] = useState(false);
+
   const handleSymptomCheck = async (e) => {
     e.preventDefault();
+    if (!symptoms.trim()) return toast.error('Please describe your symptoms');
+
+    setIsAnalyzingTriage(true);
     try {
       const res = await api.post('/api/triage', {
-        symptoms: symptoms // Send as plain string
+        symptoms: symptoms
       });
-      setTriageRes(res.data.data); // Backend returns { success: true, data: triageEntry }
-      toast.success('Analysis complete');
+      setTriageRes(res.data.data);
+      toast.success('AI Triage Assessment Complete');
     } catch (e) {
       toast.error('Error analyzing symptoms');
+    } finally {
+      setIsAnalyzingTriage(false);
     }
   };
 
@@ -522,33 +529,115 @@ const PatientDashboard = () => {
                       </button>
                     ))}
                   </div>
-                  <button type="submit" className="px-8 py-4 bg-themePrimary text-white font-black rounded-xl shadow-neon hover:shadow-neon-hover transform hover:-translate-y-1 active:translate-y-0 transition-all duration-300 w-full md:w-auto">
-                    Analyze Symptoms
-                  </button>
+                  <AnimatedButton 
+                    type="submit" 
+                    isLoading={isAnalyzingTriage} 
+                    variant="primary" 
+                    size="lg" 
+                    className="w-full md:w-auto"
+                  >
+                    {isAnalyzingTriage ? 'Analyzing Symptoms...' : 'Analyze Symptoms'}
+                  </AnimatedButton>
                 </form>
                 
-                <div className="space-y-6">
+                <div className="space-y-6 mt-8">
                   <AINurseCall />
-                  
-                  {triageRes && (
-                    <div className="bg-themePrimary text-white rounded-2xl p-6 shadow-xl relative overflow-hidden">
-                      <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-bl-full translate-x-10 -translate-y-10"></div>
-                      <div className="flex gap-2 mb-3 items-center">
-                        <span className="font-bold text-white">Severity:</span> 
-                        <span className={`px-4 py-1.5 text-xs rounded-full font-black tracking-widest uppercase shadow-sm ${
-                          triageRes.severity === 'high' || triageRes.severity === 'critical' ? 'bg-red-500 text-white' : 'bg-yellow-500 text-white'
-                        }`}>{triageRes.severity}</span>
-                      </div>
-                      <p className="text-white text-lg leading-relaxed"><strong>Recommended Action:</strong> {triageRes.recommendedAction}</p>
-                      <div className="mt-4 p-4 border-l-4 border-white bg-white/10 rounded-r-lg">
-                         <p className="text-xs font-black text-white uppercase mb-1">Possible Conditions</p>
-                         <p className="font-bold text-white">{triageRes.possibleConditions?.join(', ')}</p>
-                      </div>
-                      <div className="mt-6 text-[10px] font-black uppercase text-white/70 bg-white/10 p-3 rounded-lg border border-white/20 italic">
-                        Disclaimer: {triageRes.disclaimer}
-                      </div>
-                    </div>
-                  )}
+
+                  <AnimatePresence>
+                    {isAnalyzingTriage && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0 }}
+                        className="p-8 bg-slate-900 text-white rounded-3xl border border-slate-700 flex flex-col items-center justify-center space-y-4 text-center"
+                      >
+                        <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center animate-spin text-emerald-400">
+                          <Sparkles size={24} />
+                        </div>
+                        <div>
+                          <h4 className="font-black text-lg">AI Triage Engine Processing</h4>
+                          <p className="text-xs text-slate-400 mt-1">Cross-referencing clinical guidelines and emergency safety rules...</p>
+                        </div>
+                      </motion.div>
+                    )}
+
+                    {triageRes && !isAnalyzingTriage && (
+                      <motion.div 
+                        initial={{ opacity: 0, scale: 0.96, y: 20 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                        className="bg-emerald-700 text-white rounded-3xl p-8 shadow-2xl relative overflow-hidden space-y-6"
+                      >
+                        <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-bl-full pointer-events-none"></div>
+
+                        {/* Layer 1: Severity Badge */}
+                        <motion.div 
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: 0.1 }}
+                          className="flex items-center justify-between"
+                        >
+                          <span className="text-xs font-black uppercase tracking-widest text-emerald-200">AI Assessment Result</span>
+                          <span className={`px-4 py-1.5 text-xs rounded-full font-black tracking-widest uppercase shadow-md ${
+                            triageRes.severity === 'high' || triageRes.severity === 'critical' ? 'bg-red-500 text-white' : 'bg-amber-400 text-slate-950'
+                          }`}>
+                            {triageRes.severity || 'Medium'} Severity
+                          </span>
+                        </motion.div>
+
+                        {/* Layer 2: Recommendation */}
+                        <motion.div 
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: 0.2 }}
+                        >
+                          <h4 className="text-xs font-black uppercase tracking-widest text-emerald-200 mb-1">Recommended Next Step</h4>
+                          <p className="text-white text-xl font-black leading-snug">{triageRes.recommendedAction || triageRes.recommended_next_step}</p>
+                        </motion.div>
+
+                        {/* Layer 3: Categories / Conditions */}
+                        <motion.div 
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: 0.3 }}
+                          className="p-5 border-l-4 border-emerald-300 bg-white/10 rounded-r-2xl backdrop-blur-sm"
+                        >
+                          <p className="text-xs font-black text-emerald-200 uppercase mb-1">Possible Health Categories</p>
+                          <p className="font-bold text-white text-sm">
+                            {Array.isArray(triageRes.possibleConditions) ? triageRes.possibleConditions.join(', ') : 
+                             Array.isArray(triageRes.possible_categories) ? triageRes.possible_categories.join(', ') : 'General Care'}
+                          </p>
+                        </motion.div>
+
+                        {/* Layer 4: Red Flags if any */}
+                        {triageRes.red_flags && triageRes.red_flags.length > 0 && (
+                          <motion.div 
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.4 }}
+                            className="p-4 bg-red-900/60 border border-red-500/40 rounded-2xl"
+                          >
+                            <p className="text-xs font-black text-red-200 uppercase mb-1">Detected Emergency Red Flags</p>
+                            <ul className="list-disc list-inside text-xs font-bold text-red-100">
+                              {triageRes.red_flags.map((flag, idx) => (
+                                <li key={idx}>{flag}</li>
+                              ))}
+                            </ul>
+                          </motion.div>
+                        )}
+
+                        {/* Layer 5: Disclaimer */}
+                        <motion.div 
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          transition={{ delay: 0.5 }}
+                          className="text-[10px] font-bold uppercase tracking-wider text-emerald-200/80 bg-white/5 p-4 rounded-xl border border-white/10 italic"
+                        >
+                          Disclaimer: {triageRes.disclaimer || 'This AI assessment is for decision support only. Consult a doctor for medical diagnosis.'}
+                        </motion.div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
               </div>
             )}

@@ -7,6 +7,8 @@ import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import DashboardSidebar from '../components/DashboardSidebar';
 import ReactMarkdown from 'react-markdown';
+import AnimatedButton from '../components/ui/AnimatedButton';
+import AnimatedCard from '../components/ui/AnimatedCard';
 
 const DoctorDashboard = () => {
   const { user, logout } = useContext(AuthContext);
