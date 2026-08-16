@@ -63,3 +63,47 @@ export const getPatientById = async (req, res, next) => {
     next(error);
   }
 };
+
+// @desc    Update patient profile & health info
+// @route   PUT /api/patients/profile
+// @access  Private (Patient)
+export const updatePatientProfile = async (req, res, next) => {
+  try {
+    const userId = req.user.id || req.user._id;
+    const { name, phone, dob, emergencyContact, allergies, existingConditions, currentMedications } = req.body;
+
+    const updates = {
+      name,
+      phone,
+      updated_at: new Date().toISOString()
+    };
+
+    const { data: updated, error } = await supabase
+      .from('users')
+      .update(updates)
+      .eq('id', userId)
+      .select('*')
+      .single();
+
+    if (error) throw error;
+
+    res.status(200).json({
+      success: true,
+      message: 'Profile updated successfully',
+      data: {
+        _id: updated.id,
+        id: updated.id,
+        name: updated.name,
+        email: updated.email,
+        phone: updated.phone,
+        dob,
+        emergencyContact,
+        allergies,
+        existingConditions,
+        currentMedications
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};

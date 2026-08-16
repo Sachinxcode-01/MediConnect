@@ -11,6 +11,7 @@ import patientRoutes from './patientRoutes.js';
 import doctorRoutes from './doctorRoutes.js';
 import prescriptionRoutes from './prescriptionRoutes.js';
 import adminRoutes from './adminRoutes.js';
+import notificationRoutes from './notificationRoutes.js';
 
 export {
   authRoutes,
@@ -25,5 +26,6 @@ export {
   patientRoutes,
   doctorRoutes,
   prescriptionRoutes,
-  adminRoutes
+  adminRoutes,
+  notificationRoutes
 };

@@ -8,8 +8,8 @@ import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
 import PharmacyFinder from '../components/PharmacyFinder';
 import AINurseCall from '../components/AINurseCall';
 import { io } from 'socket.io-client';
-import { motion, AnimatePresence } from 'framer-motion';
 import DashboardSidebar from '../components/DashboardSidebar';
+import NotificationCenter from '../components/NotificationCenter';
 
 const PatientDashboard = () => {
   const { user, logout } = useContext(AuthContext);
@@ -364,6 +364,7 @@ const PatientDashboard = () => {
               <h1 className="text-4xl font-black text-themeDeep">Welcome, {user.name}</h1>
               <p className="text-themeDark/70 font-medium mt-1 uppercase tracking-widest text-xs">Patient Dashboard • Real-time Active</p>
             </div>
+            <NotificationCenter />
           </header>
         </motion.div>
         

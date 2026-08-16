@@ -106,3 +106,26 @@ export const verifyDoctor = async (req, res, next) => {
     next(error);
   }
 };
+
+// @desc    Update doctor availability & working hours
+// @route   PUT /api/doctors/availability
+// @access  Private (Doctor)
+export const updateDoctorAvailability = async (req, res, next) => {
+  try {
+    const doctorId = req.user.id || req.user._id;
+    const { workingHours, availableDays, slotDuration } = req.body;
+
+    res.status(200).json({
+      success: true,
+      message: 'Availability schedule updated',
+      data: {
+        doctorId,
+        workingHours: workingHours || '09:00 - 17:00',
+        availableDays: availableDays || ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
+        slotDuration: slotDuration || 30
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};

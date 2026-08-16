@@ -7,6 +7,7 @@ import toast from 'react-hot-toast';
 // eslint-disable-next-line no-unused-vars
 import { motion, AnimatePresence } from 'framer-motion';
 import DashboardSidebar from '../components/DashboardSidebar';
+import NotificationCenter from '../components/NotificationCenter';
 import ReactMarkdown from 'react-markdown';
 import AnimatedButton from '../components/ui/AnimatedButton';
 import AnimatedCard from '../components/ui/AnimatedCard';
@@ -205,12 +206,15 @@ const DoctorDashboard = () => {
               <h1 className="text-4xl font-black text-themeDeep">Dr. {user.name}</h1>
               <p className="text-themeDark/70 font-medium mt-1 uppercase tracking-widest text-xs">Healthcare Professional Panel • {new Date().toLocaleDateString()}</p>
             </div>
-            <button 
-              onClick={() => setIsPrescriptionModalOpen(true)}
-              className="bg-themeDeep text-white px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center gap-2 hover:shadow-3d hover:-translate-y-1 transition-all"
-            >
-              <FileText size={16} className="text-themePrimary" /> New Prescription
-            </button>
+            <div className="flex items-center gap-3">
+              <NotificationCenter />
+              <button 
+                onClick={() => setIsPrescriptionModalOpen(true)}
+                className="bg-themeDeep text-white px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center gap-2 hover:shadow-3d hover:-translate-y-1 transition-all"
+              >
+                <FileText size={16} className="text-themePrimary" /> New Prescription
+              </button>
+            </div>
           </header>
 
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">

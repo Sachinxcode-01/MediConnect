@@ -27,7 +27,8 @@ import {
   patientRoutes,
   doctorRoutes,
   prescriptionRoutes,
-  adminRoutes
+  adminRoutes,
+  notificationRoutes
 } from './routes/index.js';
 
 // Load env vars
@@ -133,6 +134,8 @@ const apiRoutesMap = [
   ['/api/v1/doctors', doctorRoutes],
   ['/api/prescriptions', prescriptionRoutes],
   ['/api/v1/prescriptions', prescriptionRoutes],
+  ['/api/notifications', notificationRoutes],
+  ['/api/v1/notifications', notificationRoutes],
   ['/api/admin', adminRoutes],
   ['/api/v1/admin', adminRoutes],
 ];
