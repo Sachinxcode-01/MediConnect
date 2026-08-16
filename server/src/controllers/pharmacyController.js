@@ -14,7 +14,10 @@ const simulatedPharmacies = [
 // @access  Private
 export const findNearbyPharmacies = async (req, res, next) => {
   try {
-    const { lat, lng, radius = 5, limit = 10 } = req.query;
+    const lat = req.query.lat || req.body.lat;
+    const lng = req.query.lng || req.body.lng;
+    const radius = req.query.radius || req.body.radius || 5;
+    const limit = req.query.limit || req.body.limit || 10;
 
     // In production, use Google Places API:
     // const response = await axios.get('https://maps.googleapis.com/maps/api/place/nearbysearch/json', {

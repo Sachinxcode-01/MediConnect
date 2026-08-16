@@ -13,6 +13,7 @@ class User {
     this.phone = data.phone || '';
     this.isActive = data.is_active !== undefined ? data.is_active : true;
     this.lastLogin = data.last_login || data.lastLogin || null;
+    this.googleId = data.google_id || data.googleId || null;
     this.deviceFingerprints = data.device_fingerprints || data.deviceFingerprints || [];
     this.loginAttempts = {
       count: data.login_attempt_count || 0,
@@ -39,6 +40,7 @@ class User {
         phone: this.phone,
         is_active: this.isActive,
         last_login: this.lastLogin,
+        google_id: this.googleId,
         device_fingerprints: this.deviceFingerprints,
         login_attempt_count: this.loginAttempts.count,
         locked_until: this.loginAttempts.lockedUntil,
@@ -105,6 +107,7 @@ class User {
         password: hashedPassword,
         role: data.role || 'patient',
         profile_image: data.profileImage || '',
+        google_id: data.googleId || null,
       })
       .select()
       .single();
@@ -192,6 +195,7 @@ class User {
       email: this.email,
       role: this.role,
       profileImage: this.profileImage,
+      googleId: this.googleId,
       phone: this.phone,
       lastLogin: this.lastLogin,
       createdAt: this.createdAt,

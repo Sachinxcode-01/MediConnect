@@ -1,43 +1,52 @@
+import { AppError } from '../errors/errors.js';
+
 const errorHandler = (err, req, res, next) => {
-  let error = { ...err };
-  error.message = err.message;
+  let statusCode = err.statusCode || 500;
+  let errorCode = err.code || 'INTERNAL_SERVER_ERROR';
+  let message = err.message || 'An unexpected error occurred';
 
-  // Log error for debugging
-  console.error('Error:', err);
+  // Log error safely in non-production environments
+  if (process.env.NODE_ENV !== 'production') {
+    console.error('API Error Trace:', err);
+  }
 
-  // Mongoose bad ObjectId
+  // Handle specific database/ORM errors
   if (err.name === 'CastError') {
-    const message = 'Resource not found';
-    error = { message, statusCode: 404 };
+    statusCode = 404;
+    errorCode = 'RESOURCE_NOT_FOUND';
+    message = 'Requested resource not found';
   }
 
-  // Mongoose duplicate key
   if (err.code === 11000) {
-    const field = Object.keys(err.keyValue)[0];
-    const message = `Duplicate value entered for ${field} field`;
-    error = { message, statusCode: 400 };
+    statusCode = 409;
+    errorCode = 'RESOURCE_CONFLICT';
+    message = 'Duplicate entry detected';
   }
 
-  // Mongoose validation error
   if (err.name === 'ValidationError') {
-    const message = Object.values(err.errors).map(val => val.message).join(', ');
-    error = { message, statusCode: 400 };
+    statusCode = 400;
+    errorCode = 'VALIDATION_ERROR';
+    message = Object.values(err.errors || {}).map(val => val.message).join(', ') || message;
   }
 
-  // JWT errors
   if (err.name === 'JsonWebTokenError') {
-    const message = 'Invalid token';
-    error = { message, statusCode: 401 };
+    statusCode = 401;
+    errorCode = 'AUTHENTICATION_ERROR';
+    message = 'Invalid authentication token';
   }
 
   if (err.name === 'TokenExpiredError') {
-    const message = 'Token expired';
-    error = { message, statusCode: 401 };
+    statusCode = 401;
+    errorCode = 'AUTHENTICATION_ERROR';
+    message = 'Authentication token expired';
   }
 
-  res.status(error.statusCode || 500).json({
+  res.status(statusCode).json({
     success: false,
-    error: error.message || 'Server Error'
+    error: {
+      code: errorCode,
+      message: message
+    }
   });
 };
 

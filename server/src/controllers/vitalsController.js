@@ -64,8 +64,9 @@ export const getVitalsHistory = async (req, res, next) => {
 
     const vitals = await VitalsLog.find({ 
       patient, 
-      createdAt: { $gte: startDate } 
-    }).sort('createdAt').limit(500);
+      createdAt: { $gte: startDate },
+      limit: 500
+    });
 
     res.status(200).json({ success: true, count: vitals.length, data: vitals });
   } catch (error) {
@@ -81,7 +82,7 @@ export const getLatestVitals = async (req, res, next) => {
     const { patientId } = req.query;
     const patient = patientId || req.user.id;
 
-    const vitals = await VitalsLog.findOne({ patient }).sort('-createdAt');
+    const vitals = await VitalsLog.findOne({ patient });
 
     if (!vitals) {
       return res.status(404).json({ success: false, message: 'No vitals recorded' });
@@ -98,9 +99,10 @@ export const getLatestVitals = async (req, res, next) => {
 // @access  Private
 export const getDashboardVitals = async (req, res, next) => {
   try {
-    const vitals = await VitalsLog.find({ patient: req.user.id })
-      .sort('-createdAt')
-      .limit(50);
+    const vitals = await VitalsLog.find({ 
+      patient: req.user.id,
+      limit: 50
+    });
 
     // Format for chart
     const chartData = vitals.map(v => ({

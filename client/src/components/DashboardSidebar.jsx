@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Activity, Clock, HeartPulse, Sparkles, Video, Database, Map, LogOut, FileText, Menu, X, ChevronRight } from 'lucide-react';
+import { Activity, Clock, HeartPulse, Sparkles, Video, Database, Map, LogOut, FileText, Menu, X, ChevronRight, Users } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const DashboardSidebar = ({ activeTab, setActiveTab, logout, role }) => {
@@ -9,6 +9,8 @@ const DashboardSidebar = ({ activeTab, setActiveTab, logout, role }) => {
 
   const patientLinks = [
     { id: 'overview', icon: Clock, label: 'Overview' },
+    { id: 'doctors', icon: Users, label: 'Find Doctors' },
+    { id: 'timeline', icon: Database, label: 'Health Timeline' },
     { id: 'symptom', icon: Activity, label: 'Symptom Checker' },
     { id: 'vision', icon: Sparkles, label: 'AI Vision Lab' },
     { id: 'wearables', icon: HeartPulse, label: 'Wearables Live' },

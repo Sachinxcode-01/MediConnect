@@ -20,7 +20,14 @@ import {
   recordRoutes,
   appointmentRoutes,
   vitalsRoutes,
-  pharmacyRoutes
+  pharmacyRoutes,
+  chatRoutes,
+  videoRoutes,
+  livekitRoutes,
+  patientRoutes,
+  doctorRoutes,
+  prescriptionRoutes,
+  adminRoutes
 } from './routes/index.js';
 
 // Load env vars
@@ -49,7 +56,7 @@ const httpServer = createServer(app);
 // Initialize Socket.io
 const io = new Server(httpServer, {
   cors: {
-    origin: process.env.CLIENT_URL ? [process.env.CLIENT_URL, 'http://localhost:5173', 'http://localhost:3001', 'http://localhost:3000'] : ['http://localhost:5173', 'http://localhost:3001', 'http://localhost:3000'],
+    origin: process.env.CLIENT_URL ? [process.env.CLIENT_URL, 'http://localhost:5173', 'http://localhost:3002', 'http://localhost:3001', 'http://localhost:3000'] : ['http://localhost:5173', 'http://localhost:3002', 'http://localhost:3001', 'http://localhost:3000'],
     credentials: true
   },
   pingTimeout: 60000,
@@ -70,7 +77,7 @@ app.use(helmet({
 
 // CORS middleware
 app.use(cors({
-  origin: process.env.CLIENT_URL ? [process.env.CLIENT_URL, 'http://localhost:5173', 'http://localhost:3001', 'http://localhost:3000'] : ['http://localhost:5173', 'http://localhost:3001', 'http://localhost:3000'],
+  origin: process.env.CLIENT_URL ? [process.env.CLIENT_URL, 'http://localhost:5173', 'http://localhost:3002', 'http://localhost:3001', 'http://localhost:3000'] : ['http://localhost:5173', 'http://localhost:3002', 'http://localhost:3001', 'http://localhost:3000'],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-Request-ID']
@@ -96,28 +103,50 @@ app.use('/api', apiLimiter);
 // Static files for uploads
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
-// Health check endpoint
-app.get('/health', (req, res) => {
-  res.status(200).json({
-    success: true,
-    message: 'MediConnect API is running',
-    timestamp: new Date().toISOString()
-  });
-});
+import healthCheckRoutes from './health/healthCheck.js';
 
-// API Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/triage', triageRoutes);
-app.use('/api/records', recordRoutes);
-app.use('/api/appointments', appointmentRoutes);
-app.use('/api/vitals', vitalsRoutes);
-app.use('/api/pharmacy', pharmacyRoutes);
+// Health Check Probes (/health, /health/live, /health/ready)
+app.use('/health', healthCheckRoutes);
+
+// API Routes (v1 & legacy aliases)
+const apiRoutesMap = [
+  ['/api/auth', authRoutes],
+  ['/api/v1/auth', authRoutes],
+  ['/api/triage', triageRoutes],
+  ['/api/v1/triage', triageRoutes],
+  ['/api/records', recordRoutes],
+  ['/api/v1/records', recordRoutes],
+  ['/api/appointments', appointmentRoutes],
+  ['/api/v1/appointments', appointmentRoutes],
+  ['/api/vitals', vitalsRoutes],
+  ['/api/v1/vitals', vitalsRoutes],
+  ['/api/wearables', vitalsRoutes],
+  ['/api/pharmacy', pharmacyRoutes],
+  ['/api/v1/pharmacy', pharmacyRoutes],
+  ['/api/video', videoRoutes],
+  ['/api/v1/telehealth', videoRoutes],
+  ['/api/chat', chatRoutes],
+  ['/api/livekit', livekitRoutes],
+  ['/api/patients', patientRoutes],
+  ['/api/v1/patients', patientRoutes],
+  ['/api/doctors', doctorRoutes],
+  ['/api/v1/doctors', doctorRoutes],
+  ['/api/prescriptions', prescriptionRoutes],
+  ['/api/v1/prescriptions', prescriptionRoutes],
+  ['/api/admin', adminRoutes],
+  ['/api/v1/admin', adminRoutes],
+];
+
+apiRoutesMap.forEach(([path, route]) => app.use(path, route));
 
 // 404 handler
 app.use((req, res) => {
   res.status(404).json({
     success: false,
-    message: 'Route not found'
+    error: {
+      code: 'RESOURCE_NOT_FOUND',
+      message: `Route '${req.originalUrl}' not found`
+    }
   });
 });
 

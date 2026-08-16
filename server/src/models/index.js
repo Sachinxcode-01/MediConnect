@@ -5,7 +5,7 @@ import { TriageEntry } from './TriageEntry.js';
 import { Appointment } from './Appointment.js';
 
 // Placeholder for vitals (wearable_history in Supabase)
-const VitalsLog = null;
+import { VitalsLog } from './VitalsLog.js';
 
 export {
   User,

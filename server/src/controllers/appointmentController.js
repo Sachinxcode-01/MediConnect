@@ -18,12 +18,10 @@ export const createAppointment = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'End time must be after start time' });
     }
 
-    // Check for conflicts
     const conflict = await Appointment.findOne({
-      $or: [
-        { doctor: doctorId, startTime: { $lt: endTime }, endTime: { $gt: startTime } },
-        { patient: patientId, startTime: { $lt: endTime }, endTime: { $gt: startTime } }
-      ]
+      doctor: doctorId,
+      startTime: { $lt: endTime },
+      endTime: { $gt: startTime }
     });
 
     if (conflict) {
@@ -41,14 +39,7 @@ export const createAppointment = async (req, res, next) => {
       roomCode: generateRoomCode()
     });
 
-    await Promise.all([
-      User.findByIdAndUpdate(patientId, { $push: { appointments: appointment._id } }),
-      User.findByIdAndUpdate(doctorId, { $push: { appointments: appointment._id } })
-    ]);
-
-    const populated = await Appointment.findById(appointment._id)
-      .populate('patient', 'name email')
-      .populate('doctor', 'name specialty');
+    const populated = await Appointment.findById(appointment.id);
 
     res.status(201).json({ success: true, data: populated });
   } catch (error) {
@@ -61,9 +52,7 @@ export const createAppointment = async (req, res, next) => {
 // @access  Private (Patient)
 export const getPatientAppointments = async (req, res, next) => {
   try {
-    const appointments = await Appointment.find({ patient: req.user.id })
-      .populate('doctor', 'name specialty email')
-      .sort('-startTime');
+    const appointments = await Appointment.find({ patient: req.user.id });
 
     res.status(200).json({ success: true, count: appointments.length, data: appointments });
   } catch (error) {
@@ -76,9 +65,7 @@ export const getPatientAppointments = async (req, res, next) => {
 // @access  Private (Doctor)
 export const getDoctorAppointments = async (req, res, next) => {
   try {
-    const appointments = await Appointment.find({ doctor: req.user.id })
-      .populate('patient', 'name email phone')
-      .sort('-startTime');
+    const appointments = await Appointment.find({ doctor: req.user.id });
 
     res.status(200).json({ success: true, count: appointments.length, data: appointments });
   } catch (error) {
@@ -96,10 +83,10 @@ export const getUpcomingAppointments = async (req, res, next) => {
       ? { doctor: req.user.id, startTime: { $gte: now } }
       : { patient: req.user.id, startTime: { $gte: now } };
 
-    const appointments = await Appointment.find(query)
-      .populate(req.user.role === 'doctor' ? 'patient' : 'doctor', 'name email')
-      .sort('startTime')
-      .limit(10);
+    const appointments = await Appointment.find({ 
+      ...query,
+      limit: 10
+    });
 
     res.status(200).json({ success: true, count: appointments.length, data: appointments });
   } catch (error) {
@@ -112,9 +99,7 @@ export const getUpcomingAppointments = async (req, res, next) => {
 // @access  Private
 export const getAppointment = async (req, res, next) => {
   try {
-    const appointment = await Appointment.findById(req.params.id)
-      .populate('patient', 'name email phone')
-      .populate('doctor', 'name specialty email');
+    const appointment = await Appointment.findById(req.params.id);
 
     if (!appointment) {
       return res.status(404).json({ success: false, message: 'Appointment not found' });
@@ -147,9 +132,8 @@ export const updateStatus = async (req, res, next) => {
 
     const appointment = await Appointment.findByIdAndUpdate(
       req.params.id,
-      { status },
-      { new: true }
-    ).populate('patient', 'name email').populate('doctor', 'name specialty');
+      { status }
+    );
 
     res.status(200).json({ success: true, data: appointment });
   } catch (error) {

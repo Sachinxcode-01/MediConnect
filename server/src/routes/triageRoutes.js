@@ -18,8 +18,9 @@ router.post('/analyze', protect, authorize('doctor'), analyzeChatHistory);
 router.get('/', protect, getTriageHistory);
 
 router.get('/all', protect, authorize('doctor', 'admin'), getAllTriageEntries);
+router.get('/queue', protect, authorize('doctor', 'admin'), getAllTriageEntries);
 router.get('/:id', protect, getTriageEntry);
-router.put('/:id/assign', protect, authorize('admin'), assignDoctor);
+router.put('/:id/assign', protect, authorize('doctor', 'admin'), assignDoctor);
 router.post('/:id/notes', protect, authorize('doctor', 'admin'), addNote);
 router.put('/:id/status', protect, authorize('doctor', 'admin'), updateStatus);
 

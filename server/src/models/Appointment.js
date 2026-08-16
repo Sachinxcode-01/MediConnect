@@ -6,10 +6,15 @@ class Appointment {
     this.id = data.id;
     this.patientId = data.patient_id;
     this.doctorId = data.doctor_id;
+    this.title = data.title;
+    this.description = data.description;
+    this.startTime = data.start_time;
+    this.endTime = data.end_time;
     this.date = data.date;
     this.status = data.status || 'scheduled';
     this.type = data.type || 'video';
     this.notes = data.notes || '';
+    this.roomCode = data.room_code;
     this.createdAt = data.created_at;
     this.patient = data.patient || null;
     this.doctor = data.doctor || null;
@@ -19,10 +24,15 @@ class Appointment {
     const row = {
       patient_id: data.patient || data.patientId,
       doctor_id: data.doctor || data.doctorId,
-      date: data.date ? new Date(data.date).toISOString() : new Date().toISOString(),
+      title: data.title,
+      description: data.description,
+      start_time: data.startTime ? new Date(data.startTime).toISOString() : null,
+      end_time: data.endTime ? new Date(data.endTime).toISOString() : null,
+      date: data.date || (data.startTime ? new Date(data.startTime).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]),
       status: data.status || 'scheduled',
       type: data.type || 'video',
       notes: data.notes || '',
+      room_code: data.roomCode,
     };
 
     const { data: inserted, error } = await supabase
@@ -38,23 +48,37 @@ class Appointment {
   static async find(query = {}) {
     let q = supabase
       .from('appointments')
-      .select(`*, patient:patients!patient_id(id, user_id), doctor:doctors!doctor_id(id, user_id, specialization)`);
+      .select(`*, patient:users!patient_id(id, name, email), doctor:users!doctor_id(id, name, specialization)`);
 
-    if (query.patient_id) q = q.eq('patient_id', query.patient_id);
-    if (query.doctor_id) q = q.eq('doctor_id', query.doctor_id);
+    if (query.patient) q = q.eq('patient_id', query.patient);
+    if (query.doctor) q = q.eq('doctor_id', query.doctor);
     if (query.status) q = q.eq('status', query.status);
+    if (query.startTime && query.startTime.$gte) q = q.gte('start_time', new Date(query.startTime.$gte).toISOString());
 
-    q = q.order('date', { ascending: false }).limit(query.limit || 100);
+    q = q.order('start_time', { ascending: true }).limit(query.limit || 100);
 
     const { data, error } = await q;
     if (error) throw error;
     return (data || []).map(r => new Appointment(r));
   }
 
+  static async findOne(query) {
+    let q = supabase.from('appointments').select('*');
+    
+    if (query.doctor) q = q.eq('doctor_id', query.doctor);
+    if (query.patient) q = q.eq('patient_id', query.patient);
+    if (query.startTime && query.startTime.$lt) q = q.lt('start_time', new Date(query.startTime.$lt).toISOString());
+    if (query.endTime && query.endTime.$gt) q = q.gt('end_time', new Date(query.endTime.$gt).toISOString());
+
+    const { data, error } = await q.maybeSingle();
+    if (error) throw error;
+    return data ? new Appointment(data) : null;
+  }
+
   static async findById(id) {
     const { data, error } = await supabase
       .from('appointments')
-      .select('*')
+      .select(`*, patient:users!patient_id(id, name, email), doctor:users!doctor_id(id, name)`)
       .eq('id', id)
       .single();
 
@@ -62,10 +86,15 @@ class Appointment {
     return new Appointment(data);
   }
 
-  static async findByIdAndUpdate(id, updates, opts) {
+  static async findByIdAndUpdate(id, updates) {
+    const dbUpdates = {};
+    if (updates.status) dbUpdates.status = updates.status;
+    if (updates.notes) dbUpdates.notes = updates.notes;
+    // ... add more as needed
+
     const { data, error } = await supabase
       .from('appointments')
-      .update(updates)
+      .update(dbUpdates)
       .eq('id', id)
       .select()
       .single();

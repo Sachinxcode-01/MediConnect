@@ -17,10 +17,97 @@ CREATE TABLE IF NOT EXISTS users (
   is_active BOOLEAN DEFAULT true,
   last_login TIMESTAMPTZ,
   device_fingerprints JSONB DEFAULT '[]',
+  google_id TEXT,
   login_attempt_count INTEGER DEFAULT 0,
   locked_until TIMESTAMPTZ,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Create doctors table
+CREATE TABLE IF NOT EXISTS doctors (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  specialization TEXT NOT NULL,
+  license_no TEXT UNIQUE,
+  experience_years INTEGER,
+  bio TEXT,
+  rating DECIMAL(3,2) DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Create patients table
+CREATE TABLE IF NOT EXISTS patients (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  blood_group TEXT,
+  gender TEXT,
+  dob DATE,
+  allergies TEXT[],
+  medications TEXT[],
+  medical_history TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Create appointments table
+CREATE TABLE IF NOT EXISTS appointments (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  patient_id UUID REFERENCES users(id),
+  doctor_id UUID REFERENCES users(id),
+  title TEXT,
+  description TEXT,
+  start_time TIMESTAMPTZ,
+  end_time TIMESTAMPTZ,
+  date DATE,
+  status TEXT DEFAULT 'scheduled',
+  type TEXT DEFAULT 'video',
+  notes TEXT,
+  room_code TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Create triage_entries table
+CREATE TABLE IF NOT EXISTS triage_entries (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  patient_id UUID REFERENCES users(id),
+  symptoms TEXT NOT NULL,
+  severity TEXT,
+  ai_analysis JSONB,
+  status TEXT DEFAULT 'pending',
+  notes TEXT[],
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Create medical_records table
+CREATE TABLE IF NOT EXISTS medical_records (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  patient_id UUID REFERENCES users(id),
+  doctor_id UUID REFERENCES users(id),
+  type TEXT NOT NULL,
+  title TEXT NOT NULL,
+  description TEXT,
+  file_url TEXT,
+  tags TEXT[],
+  date DATE DEFAULT CURRENT_DATE,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Create wearable_history table
+CREATE TABLE IF NOT EXISTS wearable_history (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  patient_id UUID REFERENCES users(id),
+  heart_rate INTEGER,
+  spo2 INTEGER,
+  blood_pressure TEXT,
+  temperature DECIMAL(4,1),
+  respiratory_rate INTEGER,
+  weight DECIMAL(5,2),
+  glucose_level INTEGER,
+  device TEXT,
+  notes TEXT,
+  alerts JSONB DEFAULT '[]',
+  alert_triggered BOOLEAN DEFAULT false,
+  created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- Create email_otps table

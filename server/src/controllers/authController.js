@@ -3,6 +3,7 @@ import crypto from 'crypto';
 import { User, EmailOTP } from '../models/index.js';
 import { sendVerificationEmail, sendLoginOTP, sendPasswordResetEmail } from '../utils/emailService.js';
 import { OAuth2Client } from 'google-auth-library';
+import axios from 'axios';
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
@@ -554,7 +555,6 @@ export const resetPassword = async (req, res, next) => {
   }
 };
 
-import axios from 'axios';
 
 // @desc    Google standard Login
 // @route   POST /api/auth/google

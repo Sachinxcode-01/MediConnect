@@ -58,23 +58,20 @@ api.interceptors.response.use(
       }
     }
 
+    // Handle error response normalization for TRD v2.0 schema
+    const serverErrorMessage = error.response.data?.error?.message || error.response.data?.message;
+    if (serverErrorMessage) {
+      error.message = serverErrorMessage;
+    }
+
     // Handle 403 Forbidden
     if (error.response.status === 403) {
-      console.error('Access forbidden:', error.response.data);
-      return Promise.reject(new Error('You do not have permission to perform this action.'));
+      return Promise.reject(new Error(serverErrorMessage || 'You do not have permission to perform this action.'));
     }
 
     // Handle 500 Server Error
     if (error.response.status === 500) {
-      console.error('Server error:', error.response.data);
-      return Promise.reject(new Error('Server error. Please try again later.'));
-    }
-
-    // Handle 422 Validation Error
-    if (error.response.status === 422) {
-      const errors = error.response.data.errors;
-      const errorMsg = errors ? Object.values(errors)[0] : 'Validation failed';
-      return Promise.reject(new Error(errorMsg));
+      return Promise.reject(new Error(serverErrorMessage || 'Server error. Please try again later.'));
     }
 
     return Promise.reject(error);

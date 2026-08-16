@@ -35,6 +35,22 @@ const PatientDashboard = () => {
   const [predictiveData, setPredictiveData] = useState(null);
   const [loadingReport, setLoadingReport] = useState(false);
 
+  // Doctor Discovery & Appointment Booking State
+  const [doctors, setDoctors] = useState([]);
+  const [selectedSpecialty, setSelectedSpecialty] = useState('All');
+  const [bookingDoctor, setBookingDoctor] = useState(null);
+  const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
+  const [appointmentForm, setAppointmentForm] = useState({
+    title: 'General Consultation',
+    description: '',
+    startTime: '',
+    endTime: '',
+    type: 'video'
+  });
+
+  // Patient Health Timeline State
+  const [timelineEvents, setTimelineEvents] = useState([]);
+
   useEffect(() => {
     if (activeTab === 'wearables' || activeTab === 'overview') {
       const socket = io(import.meta.env.VITE_API_URL || 'http://localhost:5000');
@@ -84,6 +100,69 @@ const PatientDashboard = () => {
          if (simInterval) clearInterval(simInterval);
          socket.disconnect();
       };
+    } else if (activeTab === 'doctors') {
+      const fetchDoctors = async () => {
+        try {
+          const res = await api.get(`/api/doctors?specialty=${selectedSpecialty}`);
+          setDoctors(res.data?.data || res.data || []);
+        } catch (e) {
+          toast.error('Failed to load doctor profiles');
+        }
+      };
+      fetchDoctors();
+    } else if (activeTab === 'timeline') {
+      const fetchTimeline = async () => {
+        try {
+          const [triageRes, rxRes, aptRes, recRes] = await Promise.all([
+            api.get('/api/triage').catch(() => ({ data: { data: [] } })),
+            api.get('/api/prescriptions/my').catch(() => ({ data: { data: [] } })),
+            api.get('/api/appointments/patient').catch(() => ({ data: { data: [] } })),
+            api.get('/api/records/my').catch(() => ({ data: { data: [] } }))
+          ]);
+
+          const triages = (triageRes.data?.data || triageRes.data || []).map(t => ({
+            id: t._id || t.id,
+            type: 'AI Triage',
+            title: `Triage: ${t.symptoms?.slice(0, 30)}...`,
+            date: t.createdAt || t.created_at,
+            badge: t.severity,
+            details: `Severity: ${t.severity?.toUpperCase()} • Recommendation: ${t.aiAnalysis?.recommended_next_step || t.aiAnalysis?.recommendedAction || 'N/A'}`
+          }));
+
+          const rxs = (rxRes.data?.data || rxRes.data || []).map(r => ({
+            id: r._id || r.id,
+            type: 'Prescription',
+            title: `Medication: ${r.medication}`,
+            date: r.created_at || r.createdAt,
+            badge: 'Rx Issued',
+            details: `Dosage: ${r.dosage} • ${r.instructions}`
+          }));
+
+          const apts = (aptRes.data?.data || aptRes.data || []).map(a => ({
+            id: a._id || a.id,
+            type: 'Appointment',
+            title: `Consultation with ${a.doctor?.name || 'Doctor'}`,
+            date: a.startTime || a.date || a.createdAt,
+            badge: a.status,
+            details: `Type: ${a.type} • Status: ${a.status}`
+          }));
+
+          const recs = (recRes.data?.data || recRes.data || []).map(rc => ({
+            id: rc._id || rc.id,
+            type: 'Medical Record',
+            title: rc.title || 'Clinical Document',
+            date: rc.visitDate || rc.created_at,
+            badge: rc.type,
+            details: rc.description || 'Uploaded Document'
+          }));
+
+          const combined = [...triages, ...rxs, ...apts, ...recs].sort((a, b) => new Date(b.date) - new Date(a.date));
+          setTimelineEvents(combined);
+        } catch (e) {
+          toast.error('Failed to load health timeline');
+        }
+      };
+      fetchTimeline();
     } else if (activeTab === 'pharmacy') {
       const fetchPharmacies = async () => {
          try {
@@ -97,8 +176,8 @@ const PatientDashboard = () => {
     } else if (activeTab === 'prescriptions') {
       const fetchPrescriptions = async () => {
         try {
-          const res = await api.get('/api/prescriptions');
-          setPrescriptions(res.data);
+          const res = await api.get('/api/prescriptions/my').catch(() => api.get('/api/prescriptions'));
+          setPrescriptions(res.data?.data || res.data || []);
         } catch (e) {
           toast.error('Failed to load prescriptions');
         }
@@ -119,23 +198,20 @@ const PatientDashboard = () => {
       fetchReport();
     }
 
-    // Cleanup speech recognition on unmount
     return () => {
       if (recognitionRef.current) {
         recognitionRef.current.stop();
       }
     };
-  }, [activeTab, user._id]);
+  }, [activeTab, user._id, selectedSpecialty]);
 
   const handleSymptomCheck = async (e) => {
     e.preventDefault();
     try {
-      const res = await api.post('/api/triage/symptom-check', {
-        symptoms: symptoms.split(','),
-        age: 30,
-        existingConditions: []
+      const res = await api.post('/api/triage', {
+        symptoms: symptoms // Send as plain string
       });
-      setTriageRes(res.data);
+      setTriageRes(res.data.data); // Backend returns { success: true, data: triageEntry }
       toast.success('Analysis complete');
     } catch (e) {
       toast.error('Error analyzing symptoms');
@@ -235,6 +311,32 @@ const PatientDashboard = () => {
     }
   };
 
+  const handleBookAppointment = async (e) => {
+    e.preventDefault();
+    if (!bookingDoctor) return;
+
+    try {
+      const startTime = appointmentForm.startTime ? new Date(appointmentForm.startTime).toISOString() : new Date(Date.now() + 86400000).toISOString();
+      const endTime = appointmentForm.endTime ? new Date(appointmentForm.endTime).toISOString() : new Date(Date.now() + 86400000 + 1800000).toISOString();
+
+      await api.post('/api/appointments', {
+        patientId: user._id || user.id,
+        doctorId: bookingDoctor._id || bookingDoctor.id,
+        title: appointmentForm.title,
+        description: appointmentForm.description,
+        startTime,
+        endTime,
+        type: appointmentForm.type
+      });
+
+      toast.success(`Appointment requested with ${bookingDoctor.name}!`);
+      setIsBookingModalOpen(false);
+      setBookingDoctor(null);
+    } catch (e) {
+      toast.error(e.response?.data?.message || 'Failed to book appointment');
+    }
+  };
+
   return (
     <div className="flex h-screen bg-themeLight font-geist overflow-hidden">
       <DashboardSidebar 
@@ -281,6 +383,99 @@ const PatientDashboard = () => {
                   <h3 className="font-bold text-lg mb-2 flex items-center gap-2 text-themeDeep"><HeartPulse className="text-themePrimary" /> Latest Vitals</h3>
                   <p className="text-themeDeep font-black text-2xl mt-2">{vitals.length > 0 ? vitals[vitals.length-1].heart_rate : '--'} <small className="text-sm font-bold text-themeDark/60">BPM</small></p>
                 </div>
+              </div>
+            )}
+
+            {activeTab === 'doctors' && (
+              <div className="bg-white p-8 rounded-3xl shadow-3d border border-themeMedium/30 glass space-y-6">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                  <div>
+                    <h2 className="text-3xl font-black text-themeDeep tracking-tight">Doctor Discovery</h2>
+                    <p className="text-xs font-black text-themeDark/50 uppercase tracking-widest mt-1">Find Verified Medical Specialists & Book Telehealth</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-black text-themeDark/50 uppercase">Specialty:</span>
+                    <select
+                      value={selectedSpecialty}
+                      onChange={(e) => setSelectedSpecialty(e.target.value)}
+                      className="bg-themeSoft border border-themeMedium/30 px-4 py-2 rounded-2xl font-bold text-xs text-themeDeep outline-none"
+                    >
+                      <option value="All">All Specialties</option>
+                      <option value="Cardiology">Cardiology</option>
+                      <option value="Pediatrics">Pediatrics</option>
+                      <option value="Dermatology">Dermatology</option>
+                      <option value="General Medicine">General Medicine</option>
+                      <option value="Neurology">Neurology</option>
+                      <option value="Orthopedics">Orthopedics</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {doctors.map((doc) => (
+                    <div key={doc._id || doc.id} className="p-6 bg-themeLight/50 rounded-3xl border border-themeMedium/30 hover:border-themePrimary transition-all flex flex-col justify-between group">
+                      <div>
+                        <div className="flex items-center gap-4 mb-4">
+                          <div className="w-14 h-14 rounded-2xl bg-themeDeep text-white flex items-center justify-center font-black text-2xl group-hover:scale-110 transition-transform">
+                            {doc.name[4] || doc.name[0] || 'D'}
+                          </div>
+                          <div>
+                            <h4 className="font-black text-themeDeep text-lg group-hover:text-themePrimary transition-colors">{doc.name}</h4>
+                            <p className="text-xs font-bold text-themePrimary">{doc.specialty}</p>
+                          </div>
+                        </div>
+                        <div className="space-y-2 mb-6 text-xs font-bold text-themeDark/70">
+                          <div className="flex justify-between">
+                            <span>Experience:</span> <span className="font-black text-themeDeep">{doc.experience}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Rating:</span> <span className="font-black text-yellow-600">⭐ {doc.rating} / 5.0</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Consultation Fee:</span> <span className="font-black text-themeDeep">{doc.fee}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Availability:</span> <span className="font-black text-green-600">{doc.availability}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => { setBookingDoctor(doc); setIsBookingModalOpen(true); }}
+                        className="w-full py-3 bg-themePrimary text-white rounded-2xl font-black text-xs uppercase tracking-wider shadow-neon hover:shadow-neon-hover transition-all"
+                      >
+                        Book Appointment
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'timeline' && (
+              <div className="bg-white p-8 rounded-3xl shadow-3d border border-themeMedium/30 glass space-y-6">
+                <div>
+                  <h2 className="text-3xl font-black text-themeDeep tracking-tight">Patient Health Timeline</h2>
+                  <p className="text-xs font-black text-themeDark/50 uppercase tracking-widest mt-1">Unified Chronological Medical History</p>
+                </div>
+                {timelineEvents.length === 0 ? (
+                  <div className="py-20 text-center font-bold text-themeDark/40">No health records recorded in timeline yet.</div>
+                ) : (
+                  <div className="relative border-l-2 border-themePrimary/30 ml-4 pl-6 space-y-8">
+                    {timelineEvents.map((ev, idx) => (
+                      <div key={idx} className="relative group">
+                        <div className="absolute -left-[31px] top-1.5 w-4 h-4 rounded-full bg-themePrimary border-4 border-white shadow-neon"></div>
+                        <div className="p-5 bg-themeLight/50 rounded-2xl border border-themeMedium/20 hover:bg-white transition-all">
+                          <div className="flex justify-between items-center mb-1">
+                            <span className="text-[10px] font-black uppercase tracking-widest text-themePrimary">{ev.type}</span>
+                            <span className="text-[10px] font-bold text-themeDark/50">{new Date(ev.date).toLocaleString()}</span>
+                          </div>
+                          <h4 className="font-black text-themeDeep text-lg">{ev.title}</h4>
+                          <p className="text-xs text-themeDark/70 font-medium mt-1">{ev.details}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 
@@ -825,6 +1020,91 @@ const PatientDashboard = () => {
                     </button>
                   </div>
                </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
+
+        {/* Appointment Booking Modal */}
+        <AnimatePresence>
+          {isBookingModalOpen && bookingDoctor && (
+            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                className="bg-white rounded-[2.5rem] shadow-2xl border border-white/20 w-full max-w-lg p-8 space-y-6"
+              >
+                <div className="flex justify-between items-center border-b border-themeMedium/20 pb-4">
+                  <div>
+                    <h3 className="text-2xl font-black text-themeDeep">Book Telehealth Appointment</h3>
+                    <p className="text-xs font-bold text-themePrimary">With {bookingDoctor.name} ({bookingDoctor.specialty})</p>
+                  </div>
+                  <button onClick={() => setIsBookingModalOpen(false)} className="p-2 hover:bg-themeSoft rounded-full">
+                    <X size={20} />
+                  </button>
+                </div>
+
+                <form onSubmit={handleBookAppointment} className="space-y-4">
+                  <div>
+                    <label className="text-[10px] font-black text-themeDark/50 uppercase tracking-widest">Reason / Title</label>
+                    <input
+                      type="text" required
+                      value={appointmentForm.title}
+                      onChange={(e) => setAppointmentForm({ ...appointmentForm, title: e.target.value })}
+                      placeholder="e.g. Heart Checkup Consultation"
+                      className="w-full bg-themeLight border-2 border-themeMedium/20 rounded-2xl px-4 py-3 outline-none focus:border-themePrimary font-bold text-sm"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-black text-themeDark/50 uppercase tracking-widest">Symptoms / Brief Description</label>
+                    <textarea
+                      rows="3"
+                      value={appointmentForm.description}
+                      onChange={(e) => setAppointmentForm({ ...appointmentForm, description: e.target.value })}
+                      placeholder="Provide brief context for the doctor..."
+                      className="w-full bg-themeLight border-2 border-themeMedium/20 rounded-2xl p-4 outline-none focus:border-themePrimary font-bold text-sm"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-[10px] font-black text-themeDark/50 uppercase tracking-widest">Start Time</label>
+                      <input
+                        type="datetime-local" required
+                        value={appointmentForm.startTime}
+                        onChange={(e) => setAppointmentForm({ ...appointmentForm, startTime: e.target.value })}
+                        className="w-full bg-themeLight border-2 border-themeMedium/20 rounded-2xl px-4 py-3 outline-none focus:border-themePrimary font-bold text-xs"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-black text-themeDark/50 uppercase tracking-widest">End Time</label>
+                      <input
+                        type="datetime-local" required
+                        value={appointmentForm.endTime}
+                        onChange={(e) => setAppointmentForm({ ...appointmentForm, endTime: e.target.value })}
+                        className="w-full bg-themeLight border-2 border-themeMedium/20 rounded-2xl px-4 py-3 outline-none focus:border-themePrimary font-bold text-xs"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="pt-4 flex gap-3">
+                    <button
+                      type="submit"
+                      className="flex-1 bg-themePrimary text-white py-3.5 rounded-2xl font-black text-xs uppercase tracking-widest shadow-neon hover:-translate-y-0.5 transition-all"
+                    >
+                      Confirm Booking
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIsBookingModalOpen(false)}
+                      className="px-6 bg-themeSoft text-themeDeep py-3.5 rounded-2xl font-black text-xs uppercase"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </form>
+              </motion.div>
             </div>
           )}
         </AnimatePresence>
