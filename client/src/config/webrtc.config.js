@@ -3,8 +3,9 @@
  * Optimized for low-latency telemedicine consultations and traversal through strict hospital/corporate firewalls.
  */
 export const createPeerConnectionConfig = (turnCredentials = null) => {
-  const username = turnCredentials?.username || process.env.VITE_TURN_USERNAME || 'mediconnect-user';
-  const credential = turnCredentials?.credential || process.env.VITE_TURN_CREDENTIAL || 'mediconnect-secret-key';
+  const env = typeof import.meta !== 'undefined' && import.meta.env ? import.meta.env : {};
+  const username = turnCredentials?.username || env.VITE_TURN_USERNAME || 'mediconnect-user';
+  const credential = turnCredentials?.credential || env.VITE_TURN_CREDENTIAL || 'mediconnect-secret-key';
 
   return {
     iceServers: [
