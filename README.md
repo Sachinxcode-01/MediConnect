@@ -1,5 +1,9 @@
 # MediConnect 🏥
 
+<p align="center">
+  <img src="./assets/banner.jpg" alt="MediConnect - Telemedicine & AI Healthcare Platform" width="100%" style="border-radius: 12px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);" />
+</p>
+
 MediConnect is an AI-powered, real-time Healthcare Accessibility & Telemedicine Platform. It bridges the gap between patients and medical professionals by integrating cutting-edge technologies like WebRTC for live telehealth consultations, AI for medical symptom triage, WebSocket events for live wearable data streaming, and MongoDB for secure electronic medical records (EMR).
 
 ## 🌟 Main Features & How They Work
