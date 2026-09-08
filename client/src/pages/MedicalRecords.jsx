@@ -73,27 +73,39 @@ const MedicalRecords = () => {
     try {
       const res = await api.get('/api/records');
       setRecords(res.data?.data || res.data || []);
-    } catch (e) {
+    } catch (_e) {
       toast.error('Failed to load records from vault');
     } finally {
       setLoading(false);
     }
   };
 
-  const fetchPatients = async () => {
-    try {
-      const res = await api.get('/api/patients');
-      setPatients(res.data?.data || res.data || []);
-    } catch (e) {
-      console.warn('Patient list fetch fallback note:', e);
-    }
-  };
-
   useEffect(() => {
-    fetchRecords();
-    if (user && user.role !== 'patient') {
-      fetchPatients();
-    }
+    let active = true;
+    const loadVaultData = async () => {
+      try {
+        const res = await api.get('/api/records');
+        if (active) setRecords(res.data?.data || res.data || []);
+      } catch (_e) {
+        if (active) toast.error('Failed to load records from vault');
+      } finally {
+        if (active) setLoading(false);
+      }
+
+      if (user && user.role !== 'patient') {
+        try {
+          const pRes = await api.get('/api/patients');
+          if (active) setPatients(pRes.data?.data || pRes.data || []);
+        } catch (_e) {
+          console.warn('Patient list fetch fallback note:', _e);
+        }
+      }
+    };
+
+    loadVaultData();
+    return () => {
+      active = false;
+    };
   }, [user]);
 
   // Handle Drag and Drop
@@ -156,7 +168,7 @@ const MedicalRecords = () => {
       setFormData({ patientId: '', type: 'lab_result', title: '', description: '' });
       setSelectedFile(null);
       fetchRecords();
-    } catch (e) {
+    } catch (_e) {
       toast.error('Failed to save record.');
     } finally {
       setSubmitting(false);
@@ -169,7 +181,7 @@ const MedicalRecords = () => {
       const res = await api.post(`/api/records/${id}/summarize`);
       setCurrentSummary(res.data?.summary || res.data?.data?.summary || 'Summary unavailable');
       setIsSummaryOpen(true);
-    } catch (e) {
+    } catch (_e) {
       toast.error('AI Summarization failed. Please check network.');
     } finally {
       setSummarizingId(null);

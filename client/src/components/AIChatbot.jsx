@@ -1,9 +1,8 @@
-import React, { useState, useRef, useEffect, useContext } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   MessageSquare,
   X,
   Send,
-  Bot,
   Loader2,
   Sparkles,
   Stethoscope,
@@ -21,7 +20,6 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../api/axios';
-import { AuthContext } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 
 const COMMON_SYMPTOMS = [
@@ -36,7 +34,6 @@ const COMMON_SYMPTOMS = [
 ];
 
 const AIChatbot = () => {
-  const { user } = useContext(AuthContext);
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('triage'); // 'triage' | 'chat'
 
@@ -161,7 +158,7 @@ const AIChatbot = () => {
     try {
       const response = await api.post('/api/chat', { messages: newHistory });
       setChatMessages([...newHistory, { role: 'assistant', content: response.data.reply }]);
-    } catch (error) {
+    } catch (_error) {
       setChatMessages([
         ...newHistory,
         {
