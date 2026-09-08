@@ -1,5 +1,3 @@
-import { Types } from 'mongoose';
-
 export type AuditAction =
   | 'CREATE'
   | 'READ'
@@ -11,15 +9,15 @@ export type AuditAction =
   | 'LOGOUT';
 
 export interface IAuditLog {
-  _id: Types.ObjectId;
+  id: string;
   action: AuditAction;
-  actorId: Types.ObjectId;
-  patientId?: Types.ObjectId;
+  actorId: string;
+  patientId?: string | null;
   targetResourceType: string;
-  targetResourceId: Types.ObjectId | string;
+  targetResourceId: string;
   ipAddress?: string;
   metadata?: Record<string, unknown>;
-  timestamp: Date;
+  timestamp: string | Date;
 }
 
 export interface LogEventDTO {

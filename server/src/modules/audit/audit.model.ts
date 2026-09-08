@@ -1,7 +1,7 @@
 import { Schema, model, Document } from 'mongoose';
 import { IAuditLog } from './audit.types.js';
 
-export interface AuditLogDocument extends IAuditLog, Document {}
+export interface AuditLogDocument extends Omit<IAuditLog, 'id'>, Document {}
 
 const AuditLogSchema = new Schema<AuditLogDocument>(
   {
@@ -11,14 +11,12 @@ const AuditLogSchema = new Schema<AuditLogDocument>(
       index: true,
     },
     actorId: {
-      type: Schema.Types.ObjectId,
-      ref: 'User',
+      type: String,
       required: true,
       index: true,
     },
     patientId: {
-      type: Schema.Types.ObjectId,
-      ref: 'User',
+      type: String,
       default: null,
       index: true,
     },
@@ -28,7 +26,7 @@ const AuditLogSchema = new Schema<AuditLogDocument>(
       index: true,
     },
     targetResourceId: {
-      type: Schema.Types.Mixed,
+      type: String,
       required: true,
       index: true,
     },
