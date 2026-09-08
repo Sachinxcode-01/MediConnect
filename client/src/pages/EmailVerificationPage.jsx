@@ -1,57 +1,46 @@
-import React, { useState, useEffect, useCallback, useContext } from 'react';
-import { AuthContext } from '../context/AuthContext';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { Activity, ShieldCheck, Mail, CheckCircle, XCircle, AlertCircle, ArrowLeft, RefreshCw, Zap, Lock } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { Activity, ShieldCheck, Mail, CheckCircle, AlertCircle, ArrowLeft, RefreshCw, Zap, Lock } from 'lucide-react';
+import { motion } from 'framer-motion';
 import api from '../api/axios';
 
 const EmailVerificationPage = () => {
-  const [otp, setOtp] = useState(['', '', '', '', '', '']);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errors, setErrors] = useState({});
-  const [timeLeft, setTimeLeft] = useState(60); // Cooldown timer
-  const [canResend, setCanResend] = useState(false);
-  const [email, setEmail] = useState('');
-  const [isResending, setIsResending] = useState(false);
-
-  const { user } = useContext(AuthContext);
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Get email from location state or redirect
+  const [email] = useState(() => location.state?.email || '');
+  const [otp, setOtp] = useState(['', '', '', '', '', '']);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errors, setErrors] = useState({});
+  const [timeLeft, setTimeLeft] = useState(60);
+  const [canResend, setCanResend] = useState(false);
+  const [isResending, setIsResending] = useState(false);
+
+  // Redirect if no email provided
   useEffect(() => {
-    const userEmail = location.state?.email;
-    if (!userEmail) {
+    if (!email) {
       navigate('/register', { replace: true });
-      return;
     }
-    setEmail(userEmail);
-  }, [location, navigate]);
+  }, [email, navigate]);
 
   // Countdown timer for resend
   useEffect(() => {
-    if (timeLeft > 0) {
-      const timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
-      return () => clearTimeout(timer);
-    } else {
-      setCanResend(true);
-    }
-  }, [timeLeft]);
-
-  // Auto-submit when all OTP fields are filled
-  useEffect(() => {
-    if (otp.every(digit => digit !== '') && !isSubmitting) {
-      const timer = setTimeout(() => {
-        handleSubmit();
-      }, 500);
-      return () => clearTimeout(timer);
-    }
-  }, [otp]);
+    const timer = setInterval(() => {
+      setTimeLeft(prev => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          setCanResend(true);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   // Handle OTP input change
   const handleOtpChange = (index, value) => {
-    // Only allow numbers
     if (value && !/^\d$/.test(value)) return;
 
     const newOtp = [...otp];
@@ -87,7 +76,6 @@ const EmailVerificationPage = () => {
     });
     setOtp(newOtp);
 
-    // Focus on next empty input or last input
     const nextIndex = Math.min(digits.length, 5);
     const nextInput = document.getElementById(`otp-${nextIndex}`);
     if (nextInput) nextInput.focus();
@@ -114,12 +102,10 @@ const EmailVerificationPage = () => {
         duration: 4000
       });
 
-      // Store token and redirect
       if (res.data.token) {
         localStorage.setItem('accessToken', res.data.token);
       }
 
-      // Redirect based on role
       const role = res.data.user?.role;
       if (role === 'patient') navigate('/patient', { replace: true });
       else if (role === 'doctor') navigate('/doctor', { replace: true });
@@ -132,7 +118,6 @@ const EmailVerificationPage = () => {
         icon: <AlertCircle className="w-5 h-5" />,
         duration: 5000
       });
-      // Clear OTP on error
       setOtp(['', '', '', '', '', '']);
       const firstInput = document.getElementById('otp-0');
       if (firstInput) firstInput.focus();
@@ -149,7 +134,7 @@ const EmailVerificationPage = () => {
 
     try {
       await api.post('/api/auth/resend-verification', { email });
-      toast.success('Verification code resent! Please check your email.', {
+      toast.success('Verification code resent! Please check your inbox.', {
         icon: <Mail className="w-5 h-5" />,
         duration: 4000
       });
@@ -174,121 +159,110 @@ const EmailVerificationPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-themeLight via-white to-themeSoft text-themeDeep flex font-geist overflow-hidden relative">
-      {/* Animated Background */}
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex font-geist overflow-hidden relative selection:bg-emerald-500/30">
+      {/* Dynamic Background Glows */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <motion.div
-          animate={{ x: [0, 80, 0], y: [0, 40, 0], scale: [1, 1.1, 1] }}
-          transition={{ duration: 18, repeat: Infinity, ease: "linear" }}
-          className="absolute top-[-10%] left-[10%] w-[50vw] h-[50vw] bg-gradient-to-br from-themePrimary/30 to-themeSoft/40 rounded-full filter blur-[100px] opacity-60"
-        />
-        <motion.div
-          animate={{ x: [0, -60, 0], y: [0, 80, 0], scale: [1, 1.15, 1] }}
-          transition={{ duration: 22, repeat: Infinity, ease: "linear" }}
-          className="absolute bottom-[-10%] right-[10%] w-[50vw] h-[50vw] bg-gradient-to-tl from-themeMedium/30 to-themePrimary/15 rounded-full filter blur-[120px] opacity-50"
-        />
+        <div className="absolute top-[-10%] left-[-10%] w-[50vw] h-[50vw] bg-emerald-500/10 rounded-full blur-[140px]" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[50vw] h-[50vw] bg-teal-500/10 rounded-full blur-[140px]" />
       </div>
 
-      <div className="container mx-auto flex z-10">
-        {/* Left Side: Info */}
+      <div className="container mx-auto flex z-10 min-h-screen">
+        {/* Left Side: Info (Desktop) */}
         <motion.div
-          initial={{ opacity: 0, x: -50 }}
+          initial={{ opacity: 0, x: -40 }}
           animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.8, ease: "easeOut" }}
-          className="hidden lg:flex w-1/2 flex-col justify-center p-8 xl:p-20"
+          transition={{ duration: 0.6 }}
+          className="hidden lg:flex w-1/2 flex-col justify-center p-12 xl:p-20"
         >
-          <Link to="/" className="flex items-center gap-4 mb-16 group">
-            <motion.div
-              whileHover={{ rotate: 180, scale: 1.1 }}
-              transition={{ duration: 0.5 }}
-              className="w-12 h-12 bg-gradient-to-br from-themePrimary to-themeDark rounded-2xl flex items-center justify-center shadow-neon group-hover:shadow-neon-hover"
-            >
-              <ShieldCheck className="text-white w-6 h-6" />
-            </motion.div>
-            <span className="text-3xl font-black tracking-tighter text-themeDeep italic group-hover:text-themePrimary transition-colors">MediConnect</span>
+          <Link to="/" className="flex items-center gap-3 mb-16 group w-fit">
+            <div className="w-12 h-12 bg-emerald-500 rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-500/20 group-hover:scale-105 transition-transform">
+              <Activity className="text-slate-950 w-6 h-6" />
+            </div>
+            <span className="text-2xl font-black tracking-tight text-white group-hover:text-emerald-400 transition-colors">MediConnect</span>
           </Link>
 
-          <div className="space-y-8">
-            <h1 className="text-5xl xl:text-7xl font-black text-themeDeep leading-[1.1] tracking-tighter">
-              Verify Your<br/>
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-themePrimary to-themeDark">Email Address</span>
+          <div className="space-y-6">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-black uppercase tracking-widest">
+              <Lock size={13} /> Two-Factor Patient Authentication
+            </div>
+            <h1 className="text-5xl xl:text-6xl font-black text-white leading-tight tracking-tight">
+              Verify Your<br />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-300 to-emerald-500 italic">
+                Email Address
+              </span>
             </h1>
-            <p className="text-lg xl:text-xl text-themeDark/70 font-medium max-w-md leading-relaxed">
-              We've sent a 6-digit verification code to your email. Enter it below to activate your secure healthcare account.
+            <p className="text-slate-400 text-base max-w-md leading-relaxed">
+              We dispatched an authentication code to your email. Enter it below to unlock your encrypted health records and telehealth portal.
             </p>
 
-            {/* Security Features */}
-            <div className="space-y-4 pt-8">
+            {/* Trust Badges */}
+            <div className="space-y-3 pt-6 max-w-md">
               {[
-                { icon: Lock, label: 'Secure Verification', desc: '6-digit code expires in 10 minutes' },
-                { icon: Zap, label: 'Instant Access', desc: 'Get started immediately after verification' },
-                { icon: ShieldCheck, label: 'HIPAA Compliant', desc: 'Your data is protected end-to-end' },
+                { icon: Lock, label: 'Encrypted Verification', desc: 'Single-use cryptographic pin code' },
+                { icon: Zap, label: 'Instant Triage Access', desc: 'Immediate clinical room connectivity' },
+                { icon: ShieldCheck, label: 'HIPAA & GDPR Compliant', desc: 'Zero-trust protected telemetry' },
               ].map((feature, idx) => (
-                <motion.div
+                <div
                   key={idx}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.5 + idx * 0.1 }}
-                  className="flex items-start gap-4 p-4 bg-white/60 backdrop-blur-md rounded-2xl border border-white/50 shadow-sm"
+                  className="flex items-center gap-4 p-3.5 bg-slate-900/60 backdrop-blur-md rounded-2xl border border-slate-800/80"
                 >
-                  <div className="p-3 bg-themeSoft rounded-xl">
-                    <feature.icon className="w-6 h-6 text-themePrimary" />
+                  <div className="p-2.5 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-400">
+                    <feature.icon className="w-5 h-5" />
                   </div>
                   <div>
-                    <p className="font-black text-themeDeep">{feature.label}</p>
-                    <p className="text-sm text-themeDark/60 font-medium">{feature.desc}</p>
+                    <p className="font-bold text-white text-sm">{feature.label}</p>
+                    <p className="text-xs text-slate-400">{feature.desc}</p>
                   </div>
-                </motion.div>
+                </div>
               ))}
             </div>
           </div>
         </motion.div>
 
-        {/* Right Side: Form */}
-        <div className="w-full lg:w-1/2 flex flex-col justify-center items-center p-6">
+        {/* Right Side: Verification Form */}
+        <div className="w-full lg:w-1/2 flex flex-col justify-center items-center p-4 sm:p-8">
+          {/* Mobile Brand Link */}
+          <div className="lg:hidden flex items-center justify-center gap-3 mb-6">
+            <div className="w-10 h-10 bg-emerald-500 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/20">
+              <Activity className="text-slate-950 w-5 h-5" />
+            </div>
+            <span className="text-xl font-black text-white">MediConnect</span>
+          </div>
+
           <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            initial={{ opacity: 0, scale: 0.96, y: 15 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="w-full max-w-md bg-white/80 backdrop-blur-2xl border border-white/50 p-8 sm:p-12 rounded-[2.5rem] shadow-premium relative overflow-hidden"
+            transition={{ duration: 0.5 }}
+            className="w-full max-w-md bg-slate-900/80 backdrop-blur-xl border border-slate-800/80 p-6 sm:p-10 rounded-3xl shadow-2xl relative"
           >
             {/* Header */}
-            <div className="mb-8 text-center">
-              <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ delay: 0.3, type: "spring", stiffness: 200 }}
-                className="w-20 h-20 bg-gradient-to-br from-themePrimary/20 to-themeSoft/40 rounded-2xl flex items-center justify-center mx-auto mb-4 border-2 border-themePrimary/30"
-              >
-                <Mail className="w-10 h-10 text-themePrimary" />
-              </motion.div>
-              <h2 className="text-3xl sm:text-4xl font-black text-themeDeep tracking-tighter italic">Verification Code</h2>
-              <p className="text-xs font-black text-themeDark/40 uppercase tracking-[0.2em] mt-2">
-                Enter the 6-digit code sent to
+            <div className="mb-6 text-center">
+              <div className="w-14 h-14 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl flex items-center justify-center mx-auto mb-4 text-emerald-400">
+                <Mail className="w-7 h-7" />
+              </div>
+              <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight">Security Verification</h2>
+              <p className="text-xs text-slate-400 mt-2">
+                Enter the 6-digit code delivered to:
               </p>
-              <p className="text-sm font-bold text-themePrimary mt-1">{email}</p>
+              <p className="text-sm font-bold text-emerald-400 break-all mt-1">{email}</p>
             </div>
 
             <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }} className="space-y-6">
               {errors.submit && (
-                <motion.div
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="p-4 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm font-bold text-center flex items-center justify-center gap-2"
-                >
-                  <AlertCircle size={16} />
+                <div className="p-3.5 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-xs font-bold text-center flex items-center justify-center gap-2">
+                  <AlertCircle size={15} />
                   {errors.submit}
-                </motion.div>
+                </div>
               )}
 
-              {/* OTP Inputs */}
+              {/* OTP Digits Grid */}
               <div className="space-y-3">
-                <label className="text-xs font-black text-themeDeep uppercase tracking-widest ml-1 text-center block">
-                  Enter Verification Code
+                <label className="text-[11px] font-black uppercase tracking-widest text-slate-400 text-center block">
+                  6-Digit Clinical Passcode
                 </label>
-                <div className="flex gap-2 justify-center">
+                <div className="flex gap-2 sm:gap-3 justify-center">
                   {otp.map((digit, index) => (
-                    <motion.input
+                    <input
                       key={index}
                       id={`otp-${index}`}
                       type="text"
@@ -298,121 +272,70 @@ const EmailVerificationPage = () => {
                       onChange={(e) => handleOtpChange(index, e.target.value)}
                       onKeyDown={(e) => handleKeyDown(index, e)}
                       onPaste={index === 0 ? handlePaste : undefined}
-                      className={`w-12 h-14 sm:w-14 sm:h-16 text-center text-2xl font-black border-2 rounded-xl bg-themeLight/50 focus:outline-none focus:bg-white transition-all shadow-inner ${
-                        errors.submit
-                          ? 'border-red-400 ring-4 ring-red-400/10 focus:border-themePrimary'
-                          : 'border-themeMedium/30 focus:border-themePrimary focus:ring-4 focus:ring-themePrimary/10'
-                      }`}
+                      className="w-10 h-12 sm:w-12 sm:h-14 text-center text-xl sm:text-2xl font-black font-mono rounded-xl bg-slate-950/70 border border-slate-750 text-white focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all"
                     />
                   ))}
                 </div>
               </div>
 
               {/* Submit Button */}
-              <motion.button
+              <button
                 type="submit"
                 disabled={isSubmitting || otp.some(d => d === '')}
-                whileHover={{ scale: isSubmitting || otp.some(d => d === '') ? 1 : 1.02 }}
-                whileTap={{ scale: isSubmitting || otp.some(d => d === '') ? 1 : 0.98 }}
-                className="w-full py-4 bg-gradient-to-r from-themePrimary to-themeDeep text-white rounded-2xl font-black text-lg flex items-center justify-center gap-3 shadow-neon hover:shadow-neon-hover transition-all group relative overflow-hidden disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                className="w-full py-3.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-xl text-sm uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
               >
-                <span className="relative z-10 flex items-center gap-2">
-                  {isSubmitting ? (
-                    <>
-                      <motion.div
-                        animate={{ rotate: 360 }}
-                        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                      >
-                        <Activity size={20} />
-                      </motion.div>
-                      Verifying...
-                    </>
-                  ) : (
-                    <>
-                      <ShieldCheck size={20} />
-                      VERIFY EMAIL
-                      <CheckCircle className="group-hover:scale-110 transition-transform" size={20} />
-                    </>
-                  )}
-                </span>
-                <div className="absolute inset-0 bg-gradient-to-r from-themeDark to-themePrimary opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-              </motion.button>
+                {isSubmitting ? (
+                  <>
+                    <RefreshCw className="animate-spin" size={16} />
+                    Verifying Credentials...
+                  </>
+                ) : (
+                  <>
+                    <ShieldCheck size={18} />
+                    Verify Code
+                    <CheckCircle size={16} />
+                  </>
+                )}
+              </button>
             </form>
 
-            {/* Resend Code */}
-            <div className="mt-6 text-center space-y-4">
-              <div className="flex items-center justify-center gap-2">
-                <p className="text-sm font-bold text-themeDark/60">Didn't receive the code?</p>
-                <motion.button
+            {/* Resend Code Strip */}
+            <div className="mt-6 text-center space-y-3 pt-4 border-t border-slate-800/80">
+              <div className="flex items-center justify-center gap-2 text-xs">
+                <span className="text-slate-400">Didn't receive the code?</span>
+                <button
                   type="button"
                   onClick={handleResend}
                   disabled={!canResend || isResending}
-                  whileHover={{ scale: canResend && !isResending ? 1.05 : 1 }}
-                  whileTap={{ scale: canResend && !isResending ? 0.95 : 1 }}
-                  className={`text-[10px] font-black uppercase tracking-widest flex items-center gap-1 ${
+                  className={`font-black uppercase tracking-wider flex items-center gap-1.5 transition-colors ${
                     canResend && !isResending
-                      ? 'text-themePrimary hover:underline cursor-pointer'
-                      : 'text-themeDark/40 cursor-not-allowed'
+                      ? 'text-emerald-400 hover:text-emerald-300 cursor-pointer'
+                      : 'text-slate-600 cursor-not-allowed'
                   }`}
                 >
-                  {isResending ? (
-                    <>
-                      <motion.div
-                        animate={{ rotate: 360 }}
-                        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                      >
-                        <RefreshCw size={12} />
-                      </motion.div>
-                      Sending...
-                    </>
-                  ) : (
-                    <>
-                      <RefreshCw size={12} />
-                      Resend
-                    </>
-                  )}
-                </motion.button>
+                  <RefreshCw size={12} className={isResending ? 'animate-spin' : ''} />
+                  {isResending ? 'Sending...' : 'Resend'}
+                </button>
               </div>
 
               {!canResend && (
-                <motion.p
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="text-xs font-bold text-themeDark/50 flex items-center justify-center gap-2"
-                >
+                <p className="text-xs text-slate-500 flex items-center justify-center gap-1.5 font-medium">
                   <Lock size={12} />
-                  Resend available in <span className="text-themePrimary font-black">{formatTime(timeLeft)}</span>
-                </motion.p>
+                  Resend available in <span className="text-emerald-400 font-bold">{formatTime(timeLeft)}</span>
+                </p>
               )}
             </div>
 
-            {/* Security Notice */}
-            <div className="mt-6 p-4 bg-themeSoft/30 rounded-xl border border-themePrimary/20">
-              <div className="flex items-start gap-3">
-                <ShieldCheck className="w-4 h-4 text-themePrimary mt-0.5" />
-                <div>
-                  <p className="text-[10px] font-black text-themePrimary uppercase tracking-widest mb-1">Security Notice</p>
-                  <p className="text-xs text-themeDark/70 font-medium">
-                    For your security, the verification code expires in 10 minutes. Never share this code with anyone.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Back Link */}
-            <div className="mt-6 text-center">
+            {/* Back to Register Link */}
+            <div className="mt-5 text-center">
               <Link
                 to="/register"
-                className="text-xs font-bold text-themeDark/60 hover:text-themePrimary transition-colors flex items-center justify-center gap-2 group"
+                className="text-xs font-bold text-slate-400 hover:text-emerald-400 transition-colors inline-flex items-center gap-2"
               >
-                <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+                <ArrowLeft size={14} />
                 Back to Registration
               </Link>
             </div>
-
-            {/* Decorative Elements */}
-            <div className="absolute -top-20 -right-20 w-40 h-40 bg-gradient-to-br from-themeSoft/50 to-transparent rounded-full blur-2xl opacity-50"></div>
-            <div className="absolute -bottom-20 -left-20 w-40 h-40 bg-gradient-to-tr from-themePrimary/20 to-transparent rounded-full blur-2xl opacity-30"></div>
           </motion.div>
         </div>
       </div>

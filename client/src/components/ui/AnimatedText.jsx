@@ -9,9 +9,10 @@ export const AnimatedText = ({
   animation = 'words', // 'words' | 'fade' | 'blur' | 'slide'
   delay = 0,
   stagger = 0.04,
-  as: Component = 'div'
+  as = 'div'
 }) => {
   const containerRef = useRef(null);
+  const Tag = as;
 
   useGSAP(() => {
     if (!containerRef.current || animation === 'fade') return;
@@ -56,7 +57,7 @@ export const AnimatedText = ({
   const words = text ? text.split(' ') : [];
 
   return (
-    <Component ref={containerRef} className={`inline-block ${className}`}>
+    <Tag ref={containerRef} className={`inline-block ${className}`}>
       {words.map((word, i) => (
         <span key={i} className="inline-block overflow-hidden mr-[0.25em] align-top">
           <span className="anim-word inline-block will-change-transform">
@@ -64,7 +65,7 @@ export const AnimatedText = ({
           </span>
         </span>
       ))}
-    </Component>
+    </Tag>
   );
 };
 

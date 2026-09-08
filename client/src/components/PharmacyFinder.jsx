@@ -41,7 +41,6 @@ const PharmacyFinder = () => {
   const [filter, setFilter] = useState('all'); // 'all', 'open', '24h'
   const [searchTerm, setSearchTerm] = useState('');
   const [locationError, setLocationError] = useState(null);
-  const [useRealApi, setUseRealApi] = useState(false);
   const [deliveryTracking, setDeliveryTracking] = useState(null);
   const [deliveryStatus, setDeliveryStatus] = useState({ distance: '', time: '', status: '' });
 
@@ -60,31 +59,8 @@ const PharmacyFinder = () => {
     return (R * c).toFixed(2);
   }, []);
 
-  // Get user's actual location
-  const getUserLocation = useCallback(() => {
-    if (!navigator.geolocation) {
-      setLocationError('Geolocation is not supported by your browser');
-      return;
-    }
-
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const { latitude, longitude } = position.coords;
-        setUserLocation({ lat: latitude, lng: longitude });
-        setLocationError(null);
-        fetchPharmacies(latitude, longitude);
-      },
-      (error) => {
-        console.error('Location error:', error);
-        setLocationError('Unable to get your location. Using default (New York).');
-        fetchPharmacies(40.7128, -74.0060);
-      },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 300000 }
-    );
-  }, []);
-
   // Fetch pharmacies from API
-  const fetchPharmacies = async (lat, lng) => {
+  const fetchPharmacies = useCallback(async (lat, lng) => {
     setLoading(true);
     try {
       const res = await api.post('/api/pharmacy/nearby', { lat, lng });
@@ -111,10 +87,36 @@ const PharmacyFinder = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [calculateDistance]);
+
+  // Get user's actual location
+  const getUserLocation = useCallback(() => {
+    if (!navigator.geolocation) {
+      setLocationError('Geolocation is not supported by your browser');
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        setUserLocation({ lat: latitude, lng: longitude });
+        setLocationError(null);
+        fetchPharmacies(latitude, longitude);
+      },
+      (error) => {
+        console.error('Location error:', error);
+        setLocationError('Unable to get your location. Using default (New York).');
+        fetchPharmacies(40.7128, -74.0060);
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 300000 }
+    );
+  }, [fetchPharmacies]);
 
   useEffect(() => {
-    getUserLocation();
+    const timer = setTimeout(() => {
+      getUserLocation();
+    }, 0);
+    return () => clearTimeout(timer);
   }, [getUserLocation]);
 
   // Filter pharmacies

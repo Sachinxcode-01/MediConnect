@@ -111,7 +111,7 @@ export const ConfirmModal = ({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} size="sm" showCloseButton={!loading}>
+    <Modal isOpen={isOpen} onClose={onClose} title={title} size="sm" showCloseButton={!loading}>
       <div className="text-center p-4">
         <p className="text-themeDeep font-bold mb-6">{message}</p>
         <div className="flex gap-3 justify-center">

@@ -1,5 +1,5 @@
 import React, { useContext, useState, useRef } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { 
   Activity, ShieldCheck, HeartPulse, Video, FileText, Database, Map, Sparkles, 
@@ -23,7 +23,6 @@ gsap.registerPlugin(ScrollTrigger);
 
 const LandingPage = () => {
   const { user } = useContext(AuthContext);
-  const navigate = useNavigate();
 
   // Navigation link helper
   const getDashboardLink = () => {
@@ -35,7 +34,6 @@ const LandingPage = () => {
 
   // Interactive AI Demo State
   const [demoSymptoms, setDemoSymptoms] = useState(['Headache', 'Fever']);
-  const [demoDuration, setDemoDuration] = useState('2 days');
   const [demoStep, setDemoStep] = useState('input'); // 'input' | 'analyzing' | 'result'
 
   // FAQ Accordion State

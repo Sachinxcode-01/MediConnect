@@ -24,7 +24,7 @@ export default function AINurseCall({ roomName = 'triage-room' }) {
           setToken(res.data.token);
           setUrl(res.data.url);
         })
-        .catch(err => {
+        .catch(() => {
           toast.error("Failed to connect to LiveKit server. Please configure keys.");
           setConnecting(false);
         });
@@ -113,7 +113,10 @@ function AgentUI({ disconnect }) {
       </div>
 
       <button
-        onClick={() => room.disconnect()}
+        onClick={() => {
+          room.disconnect();
+          disconnect();
+        }}
         className="bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-full font-bold uppercase tracking-wider transition-colors shadow-lg flex items-center gap-2"
       >
         <PhoneOff size={16} /> End Call

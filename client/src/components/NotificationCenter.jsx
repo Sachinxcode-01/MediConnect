@@ -9,24 +9,25 @@ const NotificationCenter = () => {
   const [isOpen, setIsOpen] = useState(false);
   const socketRef = useRef(null);
 
-  const fetchNotifications = async () => {
-    try {
-      const res = await api.get('/api/notifications');
-      setNotifications(res.data?.data || res.data || []);
-    } catch {
-      // Fallback empty
-    }
-  };
-
   useEffect(() => {
-    fetchNotifications();
+    let isMounted = true;
+    api.get('/api/notifications')
+      .then(res => {
+        if (isMounted) {
+          setNotifications(res.data?.data || res.data || []);
+        }
+      })
+      .catch(() => {});
 
     socketRef.current = io(import.meta.env.VITE_API_URL || 'http://localhost:5000');
     socketRef.current.on('notification:new', (newNotif) => {
       setNotifications(prev => [newNotif, ...prev]);
     });
 
-    return () => socketRef.current?.disconnect();
+    return () => {
+      isMounted = false;
+      socketRef.current?.disconnect();
+    };
   }, []);
 
   const unreadCount = notifications.filter(n => !n.isRead && !n.is_read).length;

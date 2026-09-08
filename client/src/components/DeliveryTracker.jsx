@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet-routing-machine';
@@ -89,7 +89,9 @@ const DeliveryTracker = ({ source, destination, onStatusUpdate }) => {
       }
       try {
          map.removeControl(routingControl);
-      } catch (err) {}
+      } catch (_e) {
+         // Silently ignore cleanup on unmount
+      }
     };
   }, [map, source, destination, onStatusUpdate]);
 
