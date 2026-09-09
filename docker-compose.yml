@@ -1,0 +1,58 @@
+services:
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: mediconnect-server
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      - PORT=5000
+      - NODE_ENV=production
+      - CLIENT_URL=http://localhost
+      - MONGODB_URI=mongodb://mongo:27017/mediconnect
+      - JWT_SECRET=mediconnect_production_jwt_secret_key_32_bytes_min
+    depends_on:
+      mongo:
+        condition: service_healthy
+    networks:
+      - mediconnect-network
+
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    container_name: mediconnect-client
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - server
+    networks:
+      - mediconnect-network
+
+  mongo:
+    image: mongo:7.0
+    container_name: mediconnect-mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    networks:
+      - mediconnect-network
+
+volumes:
+  mongo-data:
+    driver: local
+
+networks:
+  mediconnect-network:
+    driver: bridge
