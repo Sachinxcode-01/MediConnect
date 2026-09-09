@@ -15,9 +15,11 @@ import VitalsTelemetry3D from '../components/landing/VitalsTelemetry3D';
 import DoctorBooking3D from '../components/landing/DoctorBooking3D';
 import SecurityVault3D from '../components/landing/SecurityVault3D';
 import PharmacyDelivery3D from '../components/landing/PharmacyDelivery3D';
+import SystemHealthModal from '../components/ui/SystemHealthModal';
 
 const LandingPage = () => {
   const { user } = useContext(AuthContext);
+  const [isHealthModalOpen, setIsHealthModalOpen] = useState(false);
 
   // Navigation link helper
   const getDashboardLink = () => {
@@ -101,21 +103,32 @@ const LandingPage = () => {
       {/* 1. TOP ANNOUNCEMENT & SYSTEM STATUS STRIP */}
       <div className="bg-slate-950 border-b border-slate-800/80 px-4 py-2 text-xs text-slate-400">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-2 font-mono text-[11px]">
-          <div className="flex items-center gap-2">
+          <button
+            onClick={() => setIsHealthModalOpen(true)}
+            className="flex items-center gap-2 hover:opacity-80 transition-opacity text-left cursor-pointer"
+          >
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
-            <span className="text-emerald-400 font-black tracking-wider uppercase">SYSTEM ONLINE</span>
+            <span className="text-emerald-400 font-black tracking-wider uppercase">SYSTEM TELEMETRY</span>
             <span className="text-slate-600">|</span>
-            <span>100% HIPAA & GDPR Compliant Infrastructure</span>
-          </div>
+            <span className="hover:text-emerald-400 underline decoration-dotted">Inspect Live API & Database Health</span>
+          </button>
           <div className="flex items-center gap-4 text-slate-400">
-            <span>Latency: 14ms</span>
-            <span>•</span>
-            <span>Uptime: 99.98%</span>
+            <button
+              onClick={() => setIsHealthModalOpen(true)}
+              className="hover:text-white transition-colors cursor-pointer"
+            >
+              Latency: 14ms • Uptime: 99.98%
+            </button>
             <span>•</span>
             <span className="text-emerald-400 font-bold">E2EE Active</span>
           </div>
         </div>
       </div>
+
+      <SystemHealthModal
+        isOpen={isHealthModalOpen}
+        onClose={() => setIsHealthModalOpen(false)}
+      />
 
       {/* 2. MODERN GLASSMORPHIC NAVBAR */}
       <header className="sticky top-0 z-50 bg-[#030712]/80 backdrop-blur-2xl border-b border-slate-800/80 shadow-2xl">

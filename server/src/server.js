@@ -106,8 +106,10 @@ app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 import healthCheckRoutes from './health/healthCheck.js';
 
-// Health Check Probes (/health, /health/live, /health/ready)
+// Health Check Probes (/health, /api/health, /api/v1/health, /health/live, /health/ready)
 app.use('/health', healthCheckRoutes);
+app.use('/api/health', healthCheckRoutes);
+app.use('/api/v1/health', healthCheckRoutes);
 
 // API Routes (v1 & legacy aliases)
 const apiRoutesMap = [
