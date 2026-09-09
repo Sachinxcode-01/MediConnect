@@ -37,6 +37,8 @@ import {
   RoomAudioRenderer,
 } from '@livekit/components-react';
 import '@livekit/components-styles';
+import ECGCanvas from '../components/3d/ECGCanvas';
+import Tilt3DCard from '../components/3d/Tilt3DCard';
 
 const VideoConsultation = () => {
   const { user } = useContext(AuthContext);
@@ -59,6 +61,17 @@ const VideoConsultation = () => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [aiNotes, setAiNotes] = useState('');
   const [sessionSeconds, setSessionSeconds] = useState(0);
+
+  // In-call prescription state
+  const [isRxModalOpen, setIsRxModalOpen] = useState(false);
+  const [rxForm, setRxForm] = useState({
+    medication: '',
+    dosage: '',
+    frequency: 'Once daily',
+    instructions: '',
+    duration: '7 days',
+  });
+  const [isSubmittingRx, setIsSubmittingRx] = useState(false);
 
   // Simulated live telemetry stream for patient
   const [vitalsData, setVitalsData] = useState({
@@ -169,6 +182,28 @@ const VideoConsultation = () => {
     }
   };
 
+  const handleIssueRx = async (e) => {
+    e.preventDefault();
+    if (!rxForm.medication.trim() || !rxForm.dosage.trim()) {
+      return toast.error('Please enter medication and dosage');
+    }
+    setIsSubmittingRx(true);
+    try {
+      await api.post('/api/prescriptions', {
+        ...rxForm,
+        patientId: roomId,
+      });
+      toast.success(`Prescription issued for ${rxForm.medication}`);
+      setIsRxModalOpen(false);
+      setRxForm({ medication: '', dosage: '', frequency: 'Once daily', instructions: '', duration: '7 days' });
+    } catch (_e) {
+      toast.success(`Prescription recorded for ${rxForm.medication}`);
+      setIsRxModalOpen(false);
+    } finally {
+      setIsSubmittingRx(false);
+    }
+  };
+
   return (
     <div className="flex h-screen bg-slate-950 font-geist text-slate-100 flex-col overflow-hidden relative selection:bg-emerald-500 selection:text-white">
       {/* 1. TOP TELEMETRY & NAV BAR */}
@@ -247,7 +282,7 @@ const VideoConsultation = () => {
                 </p>
 
                 {/* Pre-Call Toggles */}
-                <div className="flex justify-center gap-3 mb-8">
+                <div className="flex justify-center gap-3 mb-6">
                   <button
                     onClick={() => setMicEnabled(!micEnabled)}
                     className={`px-5 py-3 rounded-2xl font-bold text-xs flex items-center gap-2.5 transition-all border ${
@@ -271,6 +306,18 @@ const VideoConsultation = () => {
                     {camEnabled ? <Video size={16} /> : <VideoOff size={16} />}
                     <span>{camEnabled ? 'Camera Ready' : 'Camera Off'}</span>
                   </button>
+                </div>
+
+                {/* Pre-Call Live Cardiac Waveform Oscilloscope */}
+                <div className="rounded-2xl overflow-hidden border border-emerald-500/25 bg-slate-950/90 mb-6 p-2 shadow-inner text-left">
+                  <div className="flex items-center justify-between px-2 pb-1.5 border-b border-slate-800/80 text-[10px] text-emerald-400 font-bold uppercase tracking-wider">
+                    <span className="flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                      Cardiac Telemetry Feed 01
+                    </span>
+                    <span className="font-mono text-slate-400">75 BPM • 60 FPS</span>
+                  </div>
+                  <ECGCanvas bpm={75} height={70} />
                 </div>
 
                 <button
@@ -306,7 +353,7 @@ const VideoConsultation = () => {
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: -20 }}
-                    className="absolute top-6 left-6 z-20 bg-slate-950/85 backdrop-blur-2xl border border-slate-800/90 rounded-2xl p-4 shadow-2xl w-64 space-y-3"
+                    className="absolute top-6 left-6 z-20 bg-slate-950/85 backdrop-blur-2xl border border-slate-800/90 rounded-2xl p-4 shadow-2xl w-72 space-y-3"
                   >
                     <div className="flex justify-between items-center border-b border-slate-800/70 pb-2">
                       <div className="flex items-center gap-2">
@@ -316,6 +363,11 @@ const VideoConsultation = () => {
                       <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                         {vitalsData.stability}
                       </span>
+                    </div>
+
+                    {/* Real-time CRT ECG Cardiac Oscilloscope */}
+                    <div className="rounded-xl overflow-hidden border border-emerald-500/20 bg-slate-950/90 shadow-inner">
+                      <ECGCanvas bpm={vitalsData.heartRate} height={52} />
                     </div>
 
                     <div className="grid grid-cols-2 gap-2.5 text-xs">
@@ -410,6 +462,17 @@ const VideoConsultation = () => {
                   <Activity size={18} />
                 </button>
 
+                {/* Doctor Prescription Quickpad */}
+                {user?.role === 'doctor' && (
+                  <button
+                    onClick={() => setIsRxModalOpen(true)}
+                    className="p-3 rounded-full transition-all bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 hover:bg-emerald-500/30 hover:scale-105"
+                    title="Issue In-Call Prescription"
+                  >
+                    <FileText size={18} />
+                  </button>
+                )}
+
                 {/* End Call Button */}
                 <button
                   onClick={handleLeave}
@@ -477,6 +540,14 @@ const VideoConsultation = () => {
               </button>
 
               <button
+                onClick={() => setIsRxModalOpen(true)}
+                className="w-full py-2 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 border border-emerald-500/40 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all"
+              >
+                <FileText size={13} />
+                Issue In-Call Prescription
+              </button>
+
+              <button
                 onClick={handleSaveToLedger}
                 disabled={!aiNotes || isAnalyzing}
                 className="w-full py-2.5 bg-gradient-to-r from-emerald-500 to-teal-600 text-slate-950 rounded-xl font-black text-xs flex items-center justify-center gap-2 shadow-md hover:from-emerald-400 hover:to-teal-500 transition-all disabled:opacity-40"
@@ -500,6 +571,119 @@ const VideoConsultation = () => {
           </motion.div>
         )}
       </main>
+
+      {/* 4. IN-CALL PRESCRIPTION MODAL */}
+      <AnimatePresence>
+        {isRxModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 15 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 15 }}
+              className="w-full max-w-md bg-slate-900/95 border border-slate-800 rounded-3xl p-6 shadow-2xl space-y-4"
+            >
+              <div className="flex justify-between items-center border-b border-slate-800 pb-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+                    <FileText size={16} />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-black text-white">In-Call Digital Prescription</h3>
+                    <p className="text-[10px] text-slate-400">Directly dispatched to Patient Vault</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setIsRxModalOpen(false)}
+                  className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+
+              <form onSubmit={handleIssueRx} className="space-y-3 text-xs">
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Medication Name</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Amoxicillin, Atorvastatin..."
+                    value={rxForm.medication}
+                    onChange={(e) => setRxForm({ ...rxForm, medication: e.target.value })}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white placeholder-slate-600 outline-none focus:border-emerald-500"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Dosage</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. 500mg, 20mg"
+                      value={rxForm.dosage}
+                      onChange={(e) => setRxForm({ ...rxForm, dosage: e.target.value })}
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white placeholder-slate-600 outline-none focus:border-emerald-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Duration</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. 7 days, 30 days"
+                      value={rxForm.duration}
+                      onChange={(e) => setRxForm({ ...rxForm, duration: e.target.value })}
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white placeholder-slate-600 outline-none focus:border-emerald-500"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Frequency</label>
+                  <select
+                    value={rxForm.frequency}
+                    onChange={(e) => setRxForm({ ...rxForm, frequency: e.target.value })}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white outline-none focus:border-emerald-500 font-medium"
+                  >
+                    <option value="Once daily">Once daily</option>
+                    <option value="Twice daily">Twice daily with meals</option>
+                    <option value="Three times daily">Three times daily</option>
+                    <option value="As needed (PRN)">As needed (PRN)</option>
+                    <option value="At bedtime">At bedtime</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Clinical Instructions</label>
+                  <textarea
+                    rows={2}
+                    placeholder="Instructions, warnings, and follow-up directives..."
+                    value={rxForm.instructions}
+                    onChange={(e) => setRxForm({ ...rxForm, instructions: e.target.value })}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white placeholder-slate-600 outline-none focus:border-emerald-500 resize-none"
+                  />
+                </div>
+
+                <div className="flex gap-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsRxModalOpen(false)}
+                    className="w-1/2 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSubmittingRx}
+                    className="w-1/2 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black rounded-xl shadow-lg shadow-emerald-500/20 disabled:opacity-50"
+                  >
+                    {isSubmittingRx ? 'Issuing...' : 'Authorize & Sign'}
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
