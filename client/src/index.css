@@ -41,8 +41,18 @@
 
   * {
     border-color: var(--color-border);
-    transition-property: color, background-color, border-color, box-shadow, transform;
-    transition-duration: 200ms;
+  }
+
+  canvas, .no-transition {
+    transition: none !important;
+  }
+
+  .preserve-3d {
+    transform-style: preserve-3d;
+  }
+
+  .perspective-1000 {
+    perspective: 1000px;
   }
 
   body {

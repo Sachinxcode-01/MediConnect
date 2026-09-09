@@ -1,25 +1,19 @@
-import React, { useContext, useState, useRef } from 'react';
+import React, { useContext, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { 
-  Activity, ShieldCheck, HeartPulse, Video, FileText, Database, Map, Sparkles, 
-  ArrowRight, CheckCircle, Zap, Lock, Users, TrendingUp, ChevronDown, 
-  Clock, Stethoscope, AlertTriangle, Shield, CheckCircle2, HelpCircle, 
-  Layers, UserCheck, MessageSquare, Compass, PhoneCall
+  Activity, HeartPulse, Sparkles, ArrowRight, Users, 
+  ChevronDown, Stethoscope, CheckCircle2, Lock, UserCheck, Layers
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useGSAP } from '@gsap/react';
-import gsap from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip } from 'recharts';
 
-import AnimatedButton from '../components/ui/AnimatedButton';
-import AnimatedCard from '../components/ui/AnimatedCard';
-import AnimatedText from '../components/ui/AnimatedText';
-import ScrollReveal from '../components/ui/ScrollReveal';
-import { StaggerContainer, StaggerItem } from '../components/ui/StaggerContainer';
-
-gsap.registerPlugin(ScrollTrigger);
+import Hero3DScene from '../components/3d/Hero3DScene';
+import Tilt3DCard from '../components/3d/Tilt3DCard';
+import InteractiveTriage3D from '../components/landing/InteractiveTriage3D';
+import TelehealthSimulator3D from '../components/landing/TelehealthSimulator3D';
+import VitalsTelemetry3D from '../components/landing/VitalsTelemetry3D';
+import DoctorBooking3D from '../components/landing/DoctorBooking3D';
+import SecurityVault3D from '../components/landing/SecurityVault3D';
 
 const LandingPage = () => {
   const { user } = useContext(AuthContext);
@@ -32,504 +26,441 @@ const LandingPage = () => {
     return '/patient';
   };
 
-  // Interactive AI Demo State
-  const [demoSymptoms, setDemoSymptoms] = useState(['Headache', 'Fever']);
-  const [demoStep, setDemoStep] = useState('input'); // 'input' | 'analyzing' | 'result'
+  // Audience Persona Tab State
+  const [activePersona, setActivePersona] = useState('patients');
 
   // FAQ Accordion State
   const [openFaq, setOpenFaq] = useState(null);
 
-  // Hero Section GSAP Timeline
-  const heroRef = useRef(null);
-  useGSAP(() => {
-    if (!heroRef.current) return;
-    const tl = gsap.timeline();
-
-    tl.from('.hero-eyebrow', { opacity: 0, y: 15, duration: 0.5, ease: 'power2.out' })
-      .from('.hero-headline', { opacity: 0, y: 25, duration: 0.7, ease: 'power3.out' }, '-=0.3')
-      .from('.hero-desc', { opacity: 0, y: 20, duration: 0.5, ease: 'power2.out' }, '-=0.4')
-      .from('.hero-cta', { opacity: 0, y: 15, duration: 0.5, ease: 'power2.out' }, '-=0.3')
-      .from('.hero-disclaimer', { opacity: 0, duration: 0.4 }, '-=0.2')
-      .from('.hero-visual', { opacity: 0, scale: 0.96, duration: 0.8, ease: 'power3.out' }, '-=0.4');
-  }, { scope: heroRef });
-
-  const runDemoAnalysis = () => {
-    setDemoStep('analyzing');
-    setTimeout(() => {
-      setDemoStep('result');
-    }, 1500);
+  const personas = {
+    patients: {
+      title: 'Built for Patients Who Deserve Effortless Healthcare',
+      desc: 'Skip crowded waiting rooms. Get instant clinical triage, video consults with top specialists, and lifetime access to your encrypted health records.',
+      bullets: [
+        'Instant AI symptom triage with clear severity guidance',
+        'Direct 1-on-1 HD video consults with verified clinicians',
+        'Continuous remote biometric telemetry syncing',
+        'Zero-knowledge encrypted EMR records available 24/7'
+      ],
+      cta: 'Get Patient Access',
+      link: '/register'
+    },
+    doctors: {
+      title: 'Engineered for Modern Clinicians & Practices',
+      desc: 'Empower your clinical workflow. Let AI handle intake scribing and pre-consult triage while you focus on patient care and diagnostic excellence.',
+      bullets: [
+        'Automated real-time AI clinical scribing during consultations',
+        'Live patient vitals & telemetry telemetry overlay',
+        'Customizable availability schedules & integrated invoicing',
+        'Built-in HIPAA and BAA compliant record archiving'
+      ],
+      cta: 'Join Doctor Network',
+      link: '/register'
+    },
+    clinics: {
+      title: 'Enterprise Architecture for Hospitals & Clinics',
+      desc: 'Deploy a unified, compliant telehealth infrastructure across multi-specialty departments with full administrative oversight and auditability.',
+      bullets: [
+        'Centralized multi-doctor administrative management console',
+        'Tamper-proof cryptographic audit trails for all actions',
+        'FHIR and HL7 compatible data architecture',
+        '99.98% platform SLA with dedicated 24/7 technical support'
+      ],
+      cta: 'Request Enterprise Demo',
+      link: '/register'
+    }
   };
 
-  // Sample Vitals Demo Data
-  const sampleVitals = [
-    { time: '08:00', hr: 72, spo2: 99 },
-    { time: '10:00', hr: 75, spo2: 98 },
-    { time: '12:00', hr: 82, spo2: 99 },
-    { time: '14:00', hr: 78, spo2: 99 },
-    { time: '16:00', hr: 74, spo2: 98 },
-    { time: '18:00', hr: 71, spo2: 99 },
+  const faqs = [
+    {
+      q: 'How does MediConnect’s AI clinical triage work?',
+      a: 'Our neural triage engine analyzes multi-factor symptom profiles, duration, patient age, and reported pain thresholds against evidence-based medical triage protocols. It calculates an urgency index (Emergency Red Flag, Urgent, Moderate, Routine) to guide patients toward the appropriate level of care.'
+    },
+    {
+      q: 'Are video consultations end-to-end encrypted?',
+      a: 'Yes. Video and audio streams are transmitted peer-to-peer using WebRTC with DTLS-SRTP and AES-256-GCM encryption. No unencrypted audio or video passes through intermediate servers, preserving complete doctor-patient confidentiality.'
+    },
+    {
+      q: 'Can I connect wearable devices or monitors for continuous vitals?',
+      a: 'MediConnect supports continuous telemetry streaming including heart rate, SpO2, and blood pressure. Automated pipelines monitor threshold breaches (such as sudden tachycardia or hypoxia) and immediately trigger care escalation alerts.'
+    },
+    {
+      q: 'Is MediConnect compliant with healthcare regulations like HIPAA?',
+      a: 'Yes, MediConnect is built from the ground up in adherence with HIPAA Security & Privacy Rules and GDPR standards. All stored patient records are encrypted at rest using AES-256 with verifiable SHA-256 tamper-proof audit trails.'
+    },
+    {
+      q: 'How quickly can I consult with a licensed doctor?',
+      a: 'Through our verified network, patients can connect with on-demand general physicians in as little as 5 minutes, or schedule appointments with board-certified specialists (Cardiology, Pediatrics, Neurology, etc.) for same-day consultations.'
+    }
   ];
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 font-geist overflow-x-hidden selection:bg-emerald-500 selection:text-white">
+    <div className="min-h-screen bg-[#030712] text-slate-100 font-sans selection:bg-emerald-500 selection:text-slate-950 overflow-x-hidden">
+      
+      {/* 1. TOP ANNOUNCEMENT & SYSTEM STATUS STRIP */}
+      <div className="bg-slate-950 border-b border-slate-800/80 px-4 py-2 text-xs text-slate-400">
+        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-2 font-mono text-[11px]">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+            <span className="text-emerald-400 font-black tracking-wider uppercase">SYSTEM ONLINE</span>
+            <span className="text-slate-600">|</span>
+            <span>100% HIPAA & GDPR Compliant Infrastructure</span>
+          </div>
+          <div className="flex items-center gap-4 text-slate-400">
+            <span>Latency: 14ms</span>
+            <span>•</span>
+            <span>Uptime: 99.98%</span>
+            <span>•</span>
+            <span className="text-emerald-400 font-bold">E2EE Active</span>
+          </div>
+        </div>
+      </div>
 
-      {/* 1. STICKY NAVBAR */}
-      <motion.nav 
-        initial={{ y: -80, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.5 }}
-        className="sticky top-0 z-50 bg-slate-950/80 backdrop-blur-xl border-b border-slate-800/80 shadow-2xl"
-      >
+      {/* 2. MODERN GLASSMORPHIC NAVBAR */}
+      <header className="sticky top-0 z-50 bg-[#030712]/80 backdrop-blur-2xl border-b border-slate-800/80 shadow-2xl">
         <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
           <Link to="/" className="flex items-center gap-3 group">
-            <div className="w-10 h-10 bg-emerald-500 rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-500/20 group-hover:scale-105 transition-transform">
-              <Activity className="text-slate-950 w-5 h-5" />
+            <div className="w-11 h-11 bg-gradient-to-tr from-emerald-500 to-teal-400 rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-500/25 group-hover:scale-105 transition-transform duration-300">
+              <Activity className="text-slate-950 w-6 h-6 stroke-[2.5]" />
             </div>
-            <span className="text-xl font-black tracking-tight text-white group-hover:text-emerald-400 transition-colors">MediConnect</span>
+            <div className="flex flex-col">
+              <span className="text-xl font-black tracking-tight text-white group-hover:text-emerald-400 transition-colors">
+                MediConnect
+              </span>
+              <span className="text-[10px] font-mono uppercase tracking-widest text-emerald-400 font-bold -mt-1">
+                3D Telehealth OS
+              </span>
+            </div>
           </Link>
 
-          <div className="hidden lg:flex items-center gap-8 text-xs font-bold uppercase tracking-wider text-slate-300">
-            <a href="#how-it-works" className="hover:text-emerald-400 transition-colors">How It Works</a>
-            <a href="#patients" className="hover:text-emerald-400 transition-colors">For Patients</a>
-            <a href="#doctors" className="hover:text-emerald-400 transition-colors">For Doctors</a>
-            <a href="#features" className="hover:text-emerald-400 transition-colors">Features</a>
+          <nav className="hidden lg:flex items-center gap-8 text-xs font-bold uppercase tracking-wider text-slate-300">
+            <a href="#triage" className="hover:text-emerald-400 transition-colors">AI Triage</a>
+            <a href="#telehealth" className="hover:text-emerald-400 transition-colors">Telehealth 3D</a>
+            <a href="#vitals" className="hover:text-emerald-400 transition-colors">Live Vitals</a>
+            <a href="#doctors" className="hover:text-emerald-400 transition-colors">Specialists</a>
             <a href="#security" className="hover:text-emerald-400 transition-colors">Security</a>
             <a href="#faq" className="hover:text-emerald-400 transition-colors">FAQ</a>
-          </div>
+          </nav>
 
           <div className="flex items-center gap-3">
             {!user ? (
               <>
-                <Link to="/login">
-                  <AnimatedButton variant="ghost" size="sm" className="text-slate-300 hover:text-white">
-                    Log In
-                  </AnimatedButton>
+                <Link
+                  to="/login"
+                  className="px-4 py-2 text-xs font-bold uppercase tracking-wider text-slate-300 hover:text-white transition-colors"
+                >
+                  Sign In
                 </Link>
-                <Link to="/register">
-                  <AnimatedButton variant="primary" size="sm" icon={ArrowRight} iconPosition="right">
-                    Get Started
-                  </AnimatedButton>
+                <Link
+                  to="/register"
+                  className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-black text-xs uppercase tracking-wider transition-all duration-300 shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 hover:scale-105 flex items-center gap-2"
+                >
+                  <span>Get Started</span>
+                  <ArrowRight size={14} />
                 </Link>
               </>
             ) : (
-              <Link to={getDashboardLink()}>
-                <AnimatedButton variant="primary" size="sm" icon={Users}>
-                  Dashboard
-                </AnimatedButton>
+              <Link
+                to={getDashboardLink()}
+                className="px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs uppercase tracking-wider transition-all duration-300 shadow-lg shadow-emerald-500/25 flex items-center gap-2"
+              >
+                <Users size={14} />
+                <span>My Dashboard</span>
               </Link>
             )}
           </div>
         </div>
-      </motion.nav>
+      </header>
 
-      {/* 2. HERO SECTION */}
-      <section ref={heroRef} className="relative pt-16 pb-24 px-6 overflow-hidden">
-        {/* Background glow */}
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-emerald-500/10 rounded-full blur-[140px] pointer-events-none" />
+      {/* 3. HERO SECTION WITH 3D INTERACTIVE CANVAS */}
+      <section className="relative pt-12 pb-24 px-6 overflow-hidden">
+        {/* Dynamic Background Radial Glows */}
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] bg-emerald-500/10 rounded-full blur-[160px] pointer-events-none" />
+        <div className="absolute top-1/3 left-1/4 w-[400px] h-[400px] bg-teal-500/10 rounded-full blur-[140px] pointer-events-none" />
 
-        <div className="max-w-7xl mx-auto text-center space-y-8 relative z-10">
-          <div className="hero-eyebrow inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-black uppercase tracking-widest">
-            <Sparkles size={14} className="animate-pulse" />
-            Connected AI-Assisted Telehealth Platform
-          </div>
-
-          <h1 className="hero-headline text-5xl sm:text-6xl md:text-7xl font-black tracking-tight leading-[1.08] text-white max-w-5xl mx-auto">
-            Healthcare,<br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-300 to-emerald-500 italic">
-              connected around you.
-            </span>
-          </h1>
-
-          <p className="hero-desc text-base sm:text-xl text-slate-300 max-w-2xl mx-auto font-medium leading-relaxed">
-            AI-assisted triage guidance. Verified doctors. Real-time video consultations. Immutable medical records. One connected healthcare experience.
-          </p>
-
-          <div className="hero-cta flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <Link to={getDashboardLink()}>
-              <AnimatedButton variant="primary" size="lg" icon={ArrowRight} iconPosition="right">
-                {user ? 'Go to Workspace' : 'Get Started'}
-              </AnimatedButton>
-            </Link>
-            <a href="#how-it-works">
-              <AnimatedButton variant="secondary" size="lg">
-                See How It Works
-              </AnimatedButton>
-            </a>
-          </div>
-
-          <p className="hero-disclaimer text-[11px] font-bold text-slate-400 max-w-lg mx-auto uppercase tracking-wider">
-            Disclaimer: MediConnect provides AI-assisted healthcare information for decision support. It does not replace professional medical diagnosis or emergency care.
-          </p>
-
-          {/* Hero Visual Composition */}
-          <div className="hero-visual pt-8">
-            <div className="p-4 bg-slate-900/90 rounded-[2.5rem] border border-slate-800 shadow-2xl max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-4 text-left">
-              <div className="bg-slate-950 p-5 rounded-2xl border border-slate-800/80 space-y-3">
-                <div className="flex items-center gap-2 text-emerald-400 text-xs font-black uppercase">
-                  <Sparkles size={16} /> AI Triage Signal
-                </div>
-                <p className="text-sm font-bold text-white">Symptoms: Sharp chest discomfort, dyspnea</p>
-                <div className="px-3 py-1 bg-red-500/20 text-red-400 border border-red-500/40 rounded-full text-[10px] font-black uppercase tracking-wider w-fit">
-                  Critical Priority • Escalated
-                </div>
-              </div>
-
-              <div className="bg-slate-950 p-5 rounded-2xl border border-slate-800/80 space-y-3">
-                <div className="flex items-center gap-2 text-emerald-400 text-xs font-black uppercase">
-                  <UserCheck size={16} /> Verified Clinician
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white font-black flex items-center justify-center text-sm">
-                    DR
-                  </div>
-                  <div>
-                    <h5 className="font-bold text-white text-sm">Dr. Maya Rao, MD</h5>
-                    <p className="text-[10px] text-slate-400 font-bold uppercase">Cardiology Specialist</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-slate-950 p-5 rounded-2xl border border-slate-800/80 space-y-3">
-                <div className="flex items-center gap-2 text-emerald-400 text-xs font-black uppercase">
-                  <HeartPulse size={16} /> Live Vitals Stream
-                </div>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-3xl font-black text-white">74</span>
-                  <span className="text-xs font-bold text-slate-400">BPM</span>
-                  <span className="ml-auto text-emerald-400 text-xs font-bold">99% SpO₂</span>
-                </div>
-              </div>
+        <div className="max-w-7xl mx-auto space-y-12 relative z-10">
+          {/* Hero Header */}
+          <div className="text-center space-y-6 max-w-4xl mx-auto">
+            <div className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-black uppercase tracking-widest shadow-lg shadow-emerald-500/10 animate-fade-in">
+              <Sparkles size={15} className="animate-spin-slow text-emerald-400" />
+              <span>Next-Gen 3D AI Health Infrastructure</span>
             </div>
-          </div>
-        </div>
-      </section>
 
-      {/* 3. TRUST & VALUE STRIP */}
-      <section className="py-10 border-y border-slate-800/80 bg-slate-900/40">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
-            {[
-              { label: 'AI-Assisted Triage', icon: Sparkles },
-              { label: 'Verified Doctors', icon: Stethoscope },
-              { label: 'Secure Medical Records', icon: Database },
-              { label: 'Real-Time Vitals', icon: HeartPulse }
-            ].map((item, i) => (
-              <div key={i} className="flex items-center justify-center gap-3 text-slate-300">
-                <item.icon className="w-5 h-5 text-emerald-400 shrink-0" />
-                <span className="text-xs font-black uppercase tracking-wider">{item.label}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* 4. WHAT IS MEDICONNECT? */}
-      <section className="py-24 px-6 relative">
-        <div className="max-w-7xl mx-auto space-y-12">
-          <ScrollReveal className="text-center space-y-4 max-w-3xl mx-auto">
-            <span className="text-xs font-black uppercase tracking-widest text-emerald-400">Platform Vision</span>
-            <h2 className="text-3xl sm:text-5xl font-black tracking-tight text-white">
-              One connected place for your complete healthcare journey.
-            </h2>
-            <p className="text-slate-400 text-base font-medium">
-              MediConnect eliminates friction between symptom onset, triage assessment, doctor discovery, consultation, medical records, and continuous vital monitoring.
-            </p>
-          </ScrollReveal>
-
-          {/* 7-Step Horizontal Flow */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-3">
-            {[
-              { step: '01', label: 'Symptoms', desc: 'Describe discomfort' },
-              { step: '02', label: 'Triage', desc: 'AI urgency assessment' },
-              { step: '03', label: 'Doctor', desc: 'Match specialist' },
-              { step: '04', label: 'Consult', desc: 'P2P Telehealth call' },
-              { step: '05', label: 'Prescribe', desc: 'Digital Rx issued' },
-              { step: '06', label: 'Records', desc: 'Archived to EMR' },
-              { step: '07', label: 'Follow-up', desc: 'Continuous telemetry' }
-            ].map((item, i) => (
-              <ScrollReveal key={i} delay={i * 0.08} className="p-4 bg-slate-900/60 rounded-2xl border border-slate-800 text-center space-y-2 hover:border-emerald-500/40 transition-all">
-                <span className="text-xs font-black text-emerald-400">{item.step}</span>
-                <h4 className="font-bold text-white text-sm">{item.label}</h4>
-                <p className="text-[10px] font-bold text-slate-500">{item.desc}</p>
-              </ScrollReveal>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* 5. THE HEALTHCARE PROBLEM */}
-      <section className="py-24 px-6 bg-slate-900/30 border-y border-slate-800/80">
-        <div className="max-w-7xl mx-auto space-y-12">
-          <ScrollReveal className="text-center space-y-4 max-w-2xl mx-auto">
-            <span className="text-xs font-black uppercase tracking-widest text-red-400">The Problem</span>
-            <h2 className="text-3xl sm:text-4xl font-black tracking-tight text-white">
-              Traditional healthcare is fragmented & confusing.
-            </h2>
-          </ScrollReveal>
-
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            {[
-              { title: 'Uncertainty', desc: 'Where should I start when symptoms appear unexpectedly?' },
-              { title: 'Discovery', desc: 'Which doctor is appropriate for my specific medical condition?' },
-              { title: 'Access', desc: 'How can I connect quickly without waiting weeks for an appointment?' },
-              { title: 'Continuity', desc: 'Where are my prescriptions, lab results, and consultation records stored?' }
-            ].map((prob, i) => (
-              <ScrollReveal key={i} delay={i * 0.1} className="p-6 bg-slate-900 rounded-3xl border border-red-500/20 space-y-3">
-                <div className="w-8 h-8 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 font-black flex items-center justify-center text-xs">
-                  0{i+1}
-                </div>
-                <h4 className="font-black text-white text-lg">{prob.title}</h4>
-                <p className="text-xs text-slate-400 font-medium leading-relaxed">{prob.desc}</p>
-              </ScrollReveal>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* 6. HOW MEDICONNECT WORKS (5 STEPS) */}
-      <section id="how-it-works" className="py-24 px-6">
-        <div className="max-w-7xl mx-auto space-y-16">
-          <ScrollReveal className="text-center space-y-4 max-w-2xl mx-auto">
-            <span className="text-xs font-black uppercase tracking-widest text-emerald-400">Step-by-Step Experience</span>
-            <h2 className="text-3xl sm:text-5xl font-black tracking-tight text-white">How MediConnect Works</h2>
-          </ScrollReveal>
-
-          <div className="space-y-8 max-w-4xl mx-auto">
-            {[
-              { step: 'Step 1', title: 'Start Your Account', desc: 'Create an account and build your basic health profile securely.', icon: Compass },
-              { step: 'Step 2', title: 'Understand Symptoms', desc: 'Use AI-assisted triage to organize symptoms and evaluate urgency signals.', icon: Sparkles },
-              { step: 'Step 3', title: 'Connect With Doctors', desc: 'Explore verified doctor profiles filtered by specialty, experience, and availability.', icon: Stethoscope },
-              { step: 'Step 4', title: 'Consult Online', desc: 'Book and attend an encrypted P2P video consultation.', icon: Video },
-              { step: 'Step 5', title: 'Continue Care', desc: 'Access prescriptions, medical records, and continuous vitals from one unified vault.', icon: Database }
-            ].map((s, i) => (
-              <ScrollReveal key={i} delay={i * 0.1} className="p-8 bg-slate-900 rounded-3xl border border-slate-800 flex items-start gap-6 hover:border-emerald-500/50 transition-all">
-                <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center justify-center shrink-0">
-                  <s.icon className="w-7 h-7" />
-                </div>
-                <div className="space-y-1">
-                  <span className="text-xs font-black uppercase tracking-widest text-emerald-400">{s.step}</span>
-                  <h3 className="text-xl font-black text-white">{s.title}</h3>
-                  <p className="text-sm font-medium text-slate-400 leading-relaxed">{s.desc}</p>
-                </div>
-              </ScrollReveal>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* 7. AI-ASSISTED TRIAGE SECTION & INTERACTIVE DEMO */}
-      <section className="py-24 px-6 bg-slate-900/40 border-y border-slate-800/80">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-          <ScrollReveal className="space-y-6">
-            <span className="text-xs font-black uppercase tracking-widest text-emerald-400">Intelligent Triage Engine</span>
-            <h2 className="text-3xl sm:text-5xl font-black tracking-tight text-white leading-tight">
-              Start with your symptoms.<br />Get a clearer next step.
-            </h2>
-            <p className="text-slate-300 text-base font-medium leading-relaxed">
-              Describe what you are experiencing. MediConnect organizes symptom signals, checks emergency red flags, and provides structured recommendations to guide your next step with a healthcare professional.
-            </p>
-            <div className="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl text-emerald-300 text-xs font-bold">
-              Note: AI triage is an assistive decision-support tool. It does not provide medical diagnosis.
-            </div>
-          </ScrollReveal>
-
-          {/* Interactive AI Triage Demo Widget */}
-          <ScrollReveal className="bg-slate-900 p-8 rounded-[2.5rem] border border-slate-800 shadow-2xl space-y-6">
-            <div className="flex justify-between items-center border-b border-slate-800 pb-4">
-              <span className="text-xs font-black uppercase tracking-widest text-emerald-400 flex items-center gap-2">
-                <Sparkles size={16} /> Interactive Triage Demo
+            <h1 className="text-5xl sm:text-7xl lg:text-8xl font-black tracking-tight leading-[1.05] text-white">
+              Healthcare,<br />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400">
+                reimagined in 3D.
               </span>
-              <span className="text-[10px] font-bold text-slate-500 uppercase">Demo Preview</span>
+            </h1>
+
+            <p className="text-base sm:text-xl text-slate-300 max-w-2xl mx-auto font-medium leading-relaxed">
+              AI-driven clinical triage, zero-latency WebRTC video consultations, live biometric telemetry, and tamper-proof EMR records — connected into one seamless ecosystem.
+            </p>
+
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-2">
+              <Link
+                to={getDashboardLink()}
+                className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-500 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-black text-sm uppercase tracking-wider transition-all duration-300 shadow-xl shadow-emerald-500/30 hover:scale-105 flex items-center justify-center gap-3"
+              >
+                <span>{user ? 'Enter Workspace' : 'Experience MediConnect'}</span>
+                <ArrowRight size={18} />
+              </Link>
+              <a
+                href="#triage"
+                className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-slate-900/90 hover:bg-slate-800 border border-slate-700/80 text-white font-black text-sm uppercase tracking-wider transition-all duration-300 hover:scale-105 flex items-center justify-center gap-2"
+              >
+                <Sparkles size={16} className="text-emerald-400" />
+                <span>Try Live AI Triage Demo</span>
+              </a>
             </div>
 
-            {demoStep === 'input' && (
-              <div className="space-y-4">
-                <label className="text-xs font-bold text-slate-300 uppercase">Select Symptoms</label>
-                <div className="flex flex-wrap gap-2">
-                  {['Headache', 'Fever', 'Shortness of breath', 'Chest pain', 'Cough'].map(s => (
-                    <button
-                      key={s}
-                      onClick={() => {
-                        setDemoSymptoms(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s]);
-                      }}
-                      className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border ${
-                        demoSymptoms.includes(s)
-                          ? 'bg-emerald-500 text-slate-950 border-emerald-400 font-black'
-                          : 'bg-slate-950 text-slate-300 border-slate-800 hover:border-slate-700'
-                      }`}
-                    >
-                      {demoSymptoms.includes(s) ? '✓ ' : '+ '}{s}
-                    </button>
-                  ))}
-                </div>
+            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest max-w-lg mx-auto">
+              Clinical Decision Support System • Does not replace emergency services
+            </p>
+          </div>
 
-                <AnimatedButton onClick={runDemoAnalysis} variant="primary" size="md" className="w-full">
-                  Run Demo Triage Analysis
-                </AnimatedButton>
-              </div>
-            )}
+          {/* Hero 3D Interactive Canvas & Floating Perspective HUD */}
+          <div className="relative w-full max-w-6xl mx-auto">
+            <div className="relative rounded-[2.5rem] bg-gradient-to-b from-slate-900/90 to-slate-950/95 border border-slate-800/80 shadow-2xl overflow-hidden p-2 sm:p-4">
+              {/* The 3D Canvas Scene */}
+              <Hero3DScene activeMode="dna" />
 
-            {demoStep === 'analyzing' && (
-              <div className="py-12 text-center space-y-4">
-                <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center animate-spin text-emerald-400 mx-auto">
-                  <Sparkles size={24} />
-                </div>
-                <p className="text-sm font-bold text-white">Analyzing symptom signals & emergency red flags...</p>
-              </div>
-            )}
+              {/* Overlaid 3D Perspective HUD Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4">
+                <Tilt3DCard className="p-5 bg-slate-950/90 border-slate-800 space-y-2">
+                  <div className="flex items-center gap-2 text-emerald-400 text-xs font-black uppercase">
+                    <Sparkles size={16} /> Intelligent Triage
+                  </div>
+                  <p className="text-sm font-bold text-white">Algorithmic Red-Flag Safety Screen</p>
+                  <div className="flex items-center gap-2 text-[10px] text-slate-400 font-mono">
+                    <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+                      Active Guidance
+                    </span>
+                    <span>Confidence: 98.4%</span>
+                  </div>
+                </Tilt3DCard>
 
-            {demoStep === 'result' && (
-              <div className="space-y-4">
-                <div className="p-4 bg-emerald-950/60 border border-emerald-500/40 rounded-2xl space-y-2">
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs font-black uppercase text-emerald-400">Severity</span>
-                    <span className="px-3 py-1 bg-amber-400 text-slate-950 font-black text-[10px] rounded-full uppercase">
-                      {demoSymptoms.includes('Chest pain') || demoSymptoms.includes('Shortness of breath') ? 'Critical / Immediate' : 'Medium / Routine'}
+                <Tilt3DCard className="p-5 bg-slate-950/90 border-slate-800 space-y-2">
+                  <div className="flex items-center gap-2 text-teal-400 text-xs font-black uppercase">
+                    <UserCheck size={16} /> Verified Clinicians
+                  </div>
+                  <p className="text-sm font-bold text-white">Board-Certified Specialists</p>
+                  <div className="flex items-center gap-2 text-[10px] text-slate-400 font-mono">
+                    <span className="px-2 py-0.5 rounded-full bg-teal-500/10 text-teal-400 border border-teal-500/30">
+                      Cardiology • Neuro • Peds
                     </span>
                   </div>
-                  <p className="text-sm font-bold text-white">
-                    {demoSymptoms.includes('Chest pain')
-                      ? 'Seek immediate emergency medical care at the nearest ER.'
-                      : 'Schedule a consultation with a General Practitioner or Cardiologist.'}
-                  </p>
-                </div>
-                <AnimatedButton onClick={() => setDemoStep('input')} variant="outline" size="sm" className="w-full">
-                  Reset Demo
-                </AnimatedButton>
+                </Tilt3DCard>
+
+                <Tilt3DCard className="p-5 bg-slate-950/90 border-slate-800 space-y-2">
+                  <div className="flex items-center gap-2 text-cyan-400 text-xs font-black uppercase">
+                    <HeartPulse size={16} /> Continuous Telemetry
+                  </div>
+                  <p className="text-sm font-bold text-white">Real-Time ECG & Biometric Sync</p>
+                  <div className="flex items-center gap-2 text-[10px] text-slate-400 font-mono">
+                    <span className="px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">
+                      60 FPS CRT Stream
+                    </span>
+                    <span>14ms Latency</span>
+                  </div>
+                </Tilt3DCard>
               </div>
-            )}
-          </ScrollReveal>
+            </div>
+          </div>
         </div>
       </section>
 
-      {/* 8. DOCTOR DISCOVERY & APPOINTMENT SHOWCASE */}
-      <section id="patients" className="py-24 px-6">
-        <div className="max-w-7xl mx-auto space-y-16">
-          <ScrollReveal className="text-center space-y-4 max-w-2xl mx-auto">
-            <span className="text-xs font-black uppercase tracking-widest text-emerald-400">Doctor Discovery & Telehealth</span>
-            <h2 className="text-3xl sm:text-5xl font-black tracking-tight text-white">Find care that fits your needs.</h2>
-          </ScrollReveal>
+      {/* 4. PRODUCTION VALUE & METRICS STRIP */}
+      <section className="py-12 border-y border-slate-800/80 bg-slate-950/60">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 text-center">
+            <div className="space-y-1">
+              <span className="text-4xl sm:text-5xl font-black font-mono text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-300">
+                50,000+
+              </span>
+              <p className="text-xs uppercase font-bold text-slate-400 tracking-wider">
+                Consultations Handled
+              </p>
+            </div>
+            <div className="space-y-1">
+              <span className="text-4xl sm:text-5xl font-black font-mono text-transparent bg-clip-text bg-gradient-to-r from-teal-300 to-cyan-400">
+                &lt; 60s
+              </span>
+              <p className="text-xs uppercase font-bold text-slate-400 tracking-wider">
+                Average Triage Response
+              </p>
+            </div>
+            <div className="space-y-1">
+              <span className="text-4xl sm:text-5xl font-black font-mono text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-emerald-400">
+                99.98%
+              </span>
+              <p className="text-xs uppercase font-bold text-slate-400 tracking-wider">
+                Telehealth SLA Uptime
+              </p>
+            </div>
+            <div className="space-y-1">
+              <span className="text-4xl sm:text-5xl font-black font-mono text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-200">
+                4.95 / 5
+              </span>
+              <p className="text-xs uppercase font-bold text-slate-400 tracking-wider">
+                Patient Satisfaction Score
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {/* 5. INTERACTIVE 3D AI TRIAGE ENGINE SHOWCASE */}
+      <section id="triage" className="py-24 px-6 relative bg-gradient-to-b from-[#030712] via-slate-900/30 to-[#030712]">
+        <InteractiveTriage3D />
+      </section>
+
+      {/* 6. LIVE 3D TELEHEALTH CONSULTATION STUDIO */}
+      <section id="telehealth" className="py-24 px-6 border-y border-slate-800/80 bg-slate-950/40">
+        <TelehealthSimulator3D />
+      </section>
+
+      {/* 7. LIVE BIOMETRIC TELEMETRY & ECG STUDIO */}
+      <section id="vitals" className="py-24 px-6 relative">
+        <VitalsTelemetry3D />
+      </section>
+
+      {/* 8. VERIFIED DOCTOR DISCOVERY & BOOKING SHOWCASE */}
+      <section id="doctors" className="py-24 px-6 border-y border-slate-800/80 bg-slate-950/40">
+        <DoctorBooking3D />
+      </section>
+
+      {/* 9. TAILORED PERSONA WORKFLOWS */}
+      <section className="py-24 px-6">
+        <div className="max-w-6xl mx-auto space-y-12">
+          <div className="text-center space-y-3">
+            <span className="text-xs font-black uppercase tracking-widest text-emerald-400">
+              Personalized Workflows
+            </span>
+            <h3 className="text-3xl sm:text-5xl font-black text-white tracking-tight">
+              Tailored for Every Stage of Care
+            </h3>
+          </div>
+
+          {/* Persona Switcher Tabs */}
+          <div className="flex justify-center gap-3">
             {[
-              { name: 'Dr. Maya Rao', spec: 'Cardiology', exp: '12 Years Exp', fee: '$50', rating: '4.9' },
-              { name: 'Dr. James Chen', spec: 'General Medicine', exp: '8 Years Exp', fee: '$40', rating: '4.8' },
-              { name: 'Dr. Sarah Jenkins', spec: 'Pediatrics', exp: '15 Years Exp', fee: '$60', rating: '5.0' }
-            ].map((doc, i) => (
-              <AnimatedCard key={i} className="bg-slate-900 border-slate-800 text-slate-100 p-6 space-y-4">
-                <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 rounded-2xl bg-emerald-600 text-white font-black text-xl flex items-center justify-center">
-                    {doc.name[4]}
+              { id: 'patients', label: 'For Patients', icon: Users },
+              { id: 'doctors', label: 'For Clinicians', icon: Stethoscope },
+              { id: 'clinics', label: 'For Hospitals', icon: Layers }
+            ].map((tab) => {
+              const Icon = tab.icon;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActivePersona(tab.id)}
+                  className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-xs font-black uppercase tracking-wider transition-all duration-300 ${
+                    activePersona === tab.id
+                      ? 'bg-emerald-500 text-slate-950 shadow-xl shadow-emerald-500/25 scale-105'
+                      : 'bg-slate-900 border border-slate-800 text-slate-400 hover:text-white'
+                  }`}
+                >
+                  <Icon size={16} />
+                  <span>{tab.label}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Persona Card */}
+          <Tilt3DCard className="p-8 sm:p-12 bg-slate-900/90 border-slate-800 shadow-2xl">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+              <div className="lg:col-span-7 space-y-6">
+                <h4 className="text-2xl sm:text-3xl font-black text-white leading-tight">
+                  {personas[activePersona].title}
+                </h4>
+                <p className="text-slate-300 text-sm sm:text-base leading-relaxed font-medium">
+                  {personas[activePersona].desc}
+                </p>
+                <div className="space-y-3 pt-2">
+                  {personas[activePersona].bullets.map((b, i) => (
+                    <div key={i} className="flex items-center gap-3 text-xs sm:text-sm text-slate-200 font-bold">
+                      <div className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
+                        <CheckCircle2 size={14} />
+                      </div>
+                      <span>{b}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="pt-4">
+                  <Link
+                    to={personas[activePersona].link}
+                    className="inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs uppercase tracking-wider transition-all shadow-lg shadow-emerald-500/20"
+                  >
+                    <span>{personas[activePersona].cta}</span>
+                    <ArrowRight size={14} />
+                  </Link>
+                </div>
+              </div>
+
+              <div className="lg:col-span-5">
+                <div className="p-6 bg-slate-950 rounded-3xl border border-slate-800 space-y-4">
+                  <div className="flex items-center justify-between text-xs font-mono text-slate-400 border-b border-slate-800 pb-3">
+                    <span className="text-emerald-400 font-bold uppercase">Dedicated Portal</span>
+                    <span>Role-Based Access</span>
                   </div>
-                  <div>
-                    <h4 className="font-black text-white text-base">{doc.name}</h4>
-                    <p className="text-xs font-bold text-emerald-400">{doc.spec}</p>
+                  <div className="space-y-3 text-xs text-slate-300">
+                    <div className="p-3 bg-slate-900 rounded-xl border border-slate-800 flex justify-between items-center">
+                      <span className="font-bold">Encryption Protocol</span>
+                      <span className="font-mono text-emerald-400">DTLS-SRTP 256</span>
+                    </div>
+                    <div className="p-3 bg-slate-900 rounded-xl border border-slate-800 flex justify-between items-center">
+                      <span className="font-bold">Record Storage</span>
+                      <span className="font-mono text-teal-400">HIPAA Compliant</span>
+                    </div>
+                    <div className="p-3 bg-slate-900 rounded-xl border border-slate-800 flex justify-between items-center">
+                      <span className="font-bold">Intelligent Scribing</span>
+                      <span className="font-mono text-cyan-400">Real-Time</span>
+                    </div>
                   </div>
                 </div>
-                <div className="space-y-1 text-xs font-bold text-slate-400">
-                  <div className="flex justify-between"><span>Experience:</span> <span className="text-white">{doc.exp}</span></div>
-                  <div className="flex justify-between"><span>Rating:</span> <span className="text-amber-400">⭐ {doc.rating}</span></div>
-                  <div className="flex justify-between"><span>Fee:</span> <span className="text-white">{doc.fee}</span></div>
-                </div>
-                <AnimatedButton variant="primary" size="sm" className="w-full">
-                  Book Appointment
-                </AnimatedButton>
-              </AnimatedCard>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* 9. LIVE VITALS & RECHARTS STREAM */}
-      <section className="py-24 px-6 bg-slate-900/40 border-y border-slate-800/80">
-        <div className="max-w-7xl mx-auto space-y-12">
-          <ScrollReveal className="text-center space-y-4 max-w-2xl mx-auto">
-            <span className="text-xs font-black uppercase tracking-widest text-emerald-400">Biometric Monitoring</span>
-            <h2 className="text-3xl sm:text-5xl font-black tracking-tight text-white">Understand your health data over time.</h2>
-          </ScrollReveal>
-
-          <div className="bg-slate-900 p-8 rounded-[2.5rem] border border-slate-800 shadow-2xl space-y-6 max-w-4xl mx-auto">
-            <div className="flex justify-between items-center">
-              <div>
-                <h4 className="font-black text-white text-lg">Heart Rate & SpO₂ Stream</h4>
-                <p className="text-xs font-bold text-slate-400">Live telemetry snapshot</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></div>
-                <span className="text-xs font-black text-emerald-400 uppercase">Stream Active</span>
               </div>
             </div>
-
-            <div className="h-64 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={sampleVitals}>
-                  <defs>
-                    <linearGradient id="colorHr" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#10B981" stopOpacity={0.3}/>
-                      <stop offset="95%" stopColor="#10B981" stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
-                  <XAxis dataKey="time" stroke="#64748b" tick={{ fill: '#94a3b8', fontSize: 12 }} />
-                  <YAxis stroke="#64748b" tick={{ fill: '#94a3b8', fontSize: 12 }} />
-                  <Tooltip contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '16px' }} />
-                  <Area type="monotone" dataKey="hr" stroke="#10B981" fillOpacity={1} fill="url(#colorHr)" strokeWidth={3} />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
+          </Tilt3DCard>
         </div>
       </section>
 
-      {/* 10. AI SAFETY & ETHICS */}
-      <section id="security" className="py-24 px-6">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-          <ScrollReveal className="space-y-6">
-            <span className="text-xs font-black uppercase tracking-widest text-emerald-400">AI Safety & Governance</span>
-            <h2 className="text-3xl sm:text-5xl font-black tracking-tight text-white leading-tight">
-              AI should assist care,<br />not replace clinical judgment.
-            </h2>
-            <p className="text-slate-300 text-base font-medium leading-relaxed">
-              MediConnect enforces explicit boundaries: AI organizes symptom context and flags potential emergency signals, while licensed clinicians retain full responsibility for clinical decisions.
-            </p>
-          </ScrollReveal>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            <div className="p-6 bg-emerald-950/40 border border-emerald-500/30 rounded-3xl space-y-2">
-              <CheckCircle2 className="w-8 h-8 text-emerald-400" />
-              <h4 className="font-black text-white text-lg">AI Triage Assist</h4>
-              <p className="text-xs font-medium text-slate-300 leading-relaxed">Organizes symptoms, identifies urgency levels, and highlights red flags for clinician review.</p>
-            </div>
-            <div className="p-6 bg-red-950/40 border border-red-500/30 rounded-3xl space-y-2">
-              <AlertTriangle className="w-8 h-8 text-red-400" />
-              <h4 className="font-black text-white text-lg">Not Autonomous Diagnosis</h4>
-              <p className="text-xs font-medium text-slate-300 leading-relaxed">Does not prescribe medication or deliver final medical diagnosis without clinician approval.</p>
-            </div>
-          </div>
-        </div>
+      {/* 10. 3D SECURITY & COMPLIANCE VAULT */}
+      <section id="security" className="py-24 px-6 border-y border-slate-800/80 bg-slate-950/40">
+        <SecurityVault3D />
       </section>
 
-      {/* 11. FAQ ACCORDION */}
-      <section id="faq" className="py-24 px-6 bg-slate-900/40 border-y border-slate-800/80">
+      {/* 11. FREQUENTLY ASKED QUESTIONS */}
+      <section id="faq" className="py-24 px-6">
         <div className="max-w-4xl mx-auto space-y-12">
-          <ScrollReveal className="text-center space-y-4">
-            <span className="text-xs font-black uppercase tracking-widest text-emerald-400">Frequently Asked Questions</span>
-            <h2 className="text-3xl sm:text-5xl font-black tracking-tight text-white">Got Questions? We have answers.</h2>
-          </ScrollReveal>
+          <div className="text-center space-y-3">
+            <span className="text-xs font-black uppercase tracking-widest text-emerald-400">
+              Clear & Transparent
+            </span>
+            <h3 className="text-3xl sm:text-5xl font-black text-white tracking-tight">
+              Frequently Asked Questions
+            </h3>
+            <p className="text-slate-400 text-sm max-w-lg mx-auto font-medium">
+              Everything you need to know about our clinical standards, encryption, and tele-consultation process.
+            </p>
+          </div>
 
           <div className="space-y-4">
-            {[
-              { q: 'What is MediConnect?', a: 'MediConnect is an AI-assisted healthcare accessibility platform connecting patients with triage assessment, doctor discovery, video consultations, and EMR records.' },
-              { q: 'How does AI triage work?', a: 'AI triage analyzes patient symptoms against emergency safety rules and clinical guidelines to recommend urgency levels (Immediate, Routine, Self Care).' },
-              { q: 'Does MediConnect replace my doctor?', a: 'No. MediConnect AI is an assistive decision-support layer. Professional clinicians make all official diagnoses and prescriptions.' },
-              { q: 'How do video consultations work?', a: 'Consultations run over encrypted WebRTC rooms directly between patient and doctor browsers with zero-latency video.' }
-            ].map((faq, i) => (
-              <div key={i} className="bg-slate-900 rounded-2xl border border-slate-800 overflow-hidden">
+            {faqs.map((faq, i) => (
+              <div
+                key={i}
+                className="bg-slate-900/90 rounded-2xl border border-slate-800/80 overflow-hidden transition-all duration-300 hover:border-slate-700"
+              >
                 <button
                   onClick={() => setOpenFaq(openFaq === i ? null : i)}
-                  className="w-full p-6 text-left font-black text-white text-base flex justify-between items-center"
+                  className="w-full p-6 text-left font-black text-white text-base flex justify-between items-center gap-4"
                 >
                   <span>{faq.q}</span>
-                  <ChevronDown className={`w-5 h-5 text-emerald-400 transition-transform ${openFaq === i ? 'rotate-180' : ''}`} />
+                  <ChevronDown
+                    className={`w-5 h-5 text-emerald-400 shrink-0 transition-transform duration-300 ${
+                      openFaq === i ? 'rotate-180 text-teal-300' : ''
+                    }`}
+                  />
                 </button>
                 <AnimatePresence>
                   {openFaq === i && (
@@ -537,7 +468,8 @@ const LandingPage = () => {
                       initial={{ height: 0, opacity: 0 }}
                       animate={{ height: 'auto', opacity: 1 }}
                       exit={{ height: 0, opacity: 0 }}
-                      className="px-6 pb-6 text-sm font-medium text-slate-400 leading-relaxed"
+                      transition={{ duration: 0.3 }}
+                      className="px-6 pb-6 text-sm font-medium text-slate-300 leading-relaxed border-t border-slate-800/60 pt-4"
                     >
                       {faq.a}
                     </motion.div>
@@ -549,34 +481,60 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* 12. FINAL CTA & FOOTER */}
-      <section className="py-24 px-6 text-center space-y-8 bg-gradient-to-b from-slate-950 to-slate-900">
-        <div className="max-w-4xl mx-auto space-y-6">
-          <h2 className="text-4xl sm:text-6xl font-black text-white tracking-tight">
-            Your next healthcare step,<br /><span className="text-emerald-400 italic">connected.</span>
+      {/* 12. HIGH-CONVERSION CTA & MODERN FOOTER */}
+      <section className="py-24 px-6 text-center space-y-12 bg-gradient-to-b from-[#030712] via-slate-950 to-slate-900 border-t border-slate-800/80 relative overflow-hidden">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-emerald-500/10 rounded-full blur-[160px] pointer-events-none" />
+
+        <div className="max-w-4xl mx-auto space-y-6 relative z-10">
+          <h2 className="text-4xl sm:text-6xl font-black text-white tracking-tight leading-tight">
+            Your next healthcare step,<br />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400 italic">
+              connected around you.
+            </span>
           </h2>
-          <p className="text-slate-400 font-medium text-base">
-            Start your MediConnect journey today for instant AI triage, doctor access, and secure medical records.
+          <p className="text-slate-300 font-medium text-base sm:text-lg max-w-xl mx-auto leading-relaxed">
+            Begin your journey with MediConnect today for instant AI triage, immediate doctor access, and secure medical record ownership.
           </p>
-          <div className="pt-4">
-            <Link to="/register">
-              <AnimatedButton variant="primary" size="lg" icon={ArrowRight} iconPosition="right">
-                Start Free Trial
-              </AnimatedButton>
+          <div className="pt-4 flex flex-col sm:flex-row gap-4 justify-center items-center">
+            <Link
+              to="/register"
+              className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-black text-sm uppercase tracking-wider transition-all duration-300 shadow-xl shadow-emerald-500/30 hover:scale-105 flex items-center justify-center gap-3"
+            >
+              <span>Create Free Account</span>
+              <ArrowRight size={18} />
+            </Link>
+            <Link
+              to="/login"
+              className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-white font-black text-sm uppercase tracking-wider transition-all duration-300 hover:scale-105"
+            >
+              Doctor & Admin Login
             </Link>
           </div>
         </div>
 
-        <footer className="pt-16 border-t border-slate-800/80 max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6 text-xs text-slate-500 font-bold">
-          <div className="flex items-center gap-2 text-white font-black">
-            <Activity className="text-emerald-400" /> MediConnect © {new Date().getFullYear()}
+        {/* Global Footer */}
+        <footer className="pt-16 border-t border-slate-800/80 max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6 text-xs text-slate-400 font-bold relative z-10">
+          <div className="flex items-center gap-3 text-white font-black">
+            <div className="w-8 h-8 rounded-xl bg-emerald-500 flex items-center justify-center text-slate-950">
+              <Activity size={18} className="stroke-[2.5]" />
+            </div>
+            <span className="text-base tracking-tight">MediConnect Health</span>
+            <span className="text-slate-600 font-normal">© {new Date().getFullYear()}</span>
           </div>
-          <div className="flex gap-6 uppercase tracking-wider">
-            <a href="#how-it-works" className="hover:text-emerald-400">How It Works</a>
-            <a href="#security" className="hover:text-emerald-400">Security</a>
-            <a href="#faq" className="hover:text-emerald-400">FAQ</a>
+
+          <div className="flex flex-wrap justify-center gap-6 uppercase tracking-wider text-[11px]">
+            <a href="#triage" className="hover:text-emerald-400 transition-colors">AI Triage</a>
+            <a href="#telehealth" className="hover:text-emerald-400 transition-colors">Telehealth</a>
+            <a href="#vitals" className="hover:text-emerald-400 transition-colors">Vitals</a>
+            <a href="#doctors" className="hover:text-emerald-400 transition-colors">Doctors</a>
+            <a href="#security" className="hover:text-emerald-400 transition-colors">Security</a>
+            <a href="#faq" className="hover:text-emerald-400 transition-colors">FAQ</a>
           </div>
-          <p className="text-[10px] uppercase">Encrypted • AI Decision Support Platform</p>
+
+          <div className="flex items-center gap-3 font-mono text-[10px] uppercase text-slate-500">
+            <Lock size={12} className="text-emerald-400" />
+            <span>End-to-End Encrypted • HIPAA Compliant</span>
+          </div>
         </footer>
       </section>
 

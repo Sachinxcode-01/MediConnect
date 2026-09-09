@@ -6,7 +6,7 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 3000,
-    open: true,
+    open: false,
     cors: true,
     headers: {
       'X-Content-Type-Options': 'nosniff',
@@ -17,30 +17,6 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     sourcemap: false,
-    minify: 'esbuild',
-    rollupOptions: {
-      output: {
-        manualChunks: (id) => {
-          if (id.includes('node_modules')) {
-            if (id.includes('react') || id.includes('react-dom') || id.includes('react-router-dom')) {
-              return 'vendor';
-            }
-            if (id.includes('recharts')) {
-              return 'charts';
-            }
-            if (id.includes('framer-motion')) {
-              return 'motion';
-            }
-            if (id.includes('lucide-react')) {
-              return 'icons';
-            }
-          }
-        }
-      }
-    },
-    chunkSizeWarningLimit: 1000,
-  },
-  optimizeDeps: {
-    include: ['react', 'react-dom', 'react-router-dom', 'axios', 'framer-motion', 'lucide-react', 'recharts'],
-  },
+    chunkSizeWarningLimit: 2000,
+  }
 })
