@@ -52,13 +52,13 @@ const SecurityVault3D = () => {
     <div className="w-full max-w-6xl mx-auto space-y-8">
       <div className="text-center space-y-3">
         <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-black uppercase tracking-widest">
-          <Shield size={14} /> Bank-Grade Security & Compliance
+          <Shield size={14} /> Core Feature 04 • Immutable Medical Records (EMR) Vault
         </div>
         <h3 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
-          Trust & Compliance Engineered into Every Byte
+          Secure Electronic Medical Records (EMR) Vault
         </h3>
         <p className="text-slate-400 text-sm max-w-xl mx-auto font-medium">
-          Protected by Zero-Knowledge encryption, HIPAA-compliant storage, and verifiable audit records.
+          Lab results, prescriptions, and visit summaries are stored securely via Cloudinary & MongoDB, strictly bound to patient ObjectIds with JWT role validation and cryptographic audit integrity.
         </p>
       </div>
 

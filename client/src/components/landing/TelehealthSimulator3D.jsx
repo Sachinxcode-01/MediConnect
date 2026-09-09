@@ -34,13 +34,13 @@ const TelehealthSimulator3D = () => {
     <div className="w-full max-w-6xl mx-auto space-y-8">
       <div className="text-center space-y-3">
         <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-black uppercase tracking-widest">
-          <Radio size={14} className="animate-pulse" /> P2P Ultra-Low Latency Telehealth
+          <Radio size={14} className="animate-pulse" /> Core Feature 02 • Native HTML5 WebRTC P2P Telehealth
         </div>
         <h3 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
-          Next-Gen Encrypted Clinical Video Consultations
+          In-Browser P2P Encrypted Video Consultations
         </h3>
         <p className="text-slate-400 text-sm max-w-xl mx-auto font-medium">
-          Experience military-grade E2EE WebRTC video consultations with live AI clinical scribing and synchronized biometric feeds.
+          Built on native <code className="text-emerald-400 font-mono text-xs">RTCPeerConnection</code> and Socket.io signaling (<code className="text-slate-300 font-mono text-xs">offer / answer / ice-candidate</code>). Zero third-party app installations required.
         </p>
       </div>
 

@@ -14,6 +14,7 @@ import TelehealthSimulator3D from '../components/landing/TelehealthSimulator3D';
 import VitalsTelemetry3D from '../components/landing/VitalsTelemetry3D';
 import DoctorBooking3D from '../components/landing/DoctorBooking3D';
 import SecurityVault3D from '../components/landing/SecurityVault3D';
+import PharmacyDelivery3D from '../components/landing/PharmacyDelivery3D';
 
 const LandingPage = () => {
   const { user } = useContext(AuthContext);
@@ -133,12 +134,13 @@ const LandingPage = () => {
             </div>
           </Link>
 
-          <nav className="hidden lg:flex items-center gap-8 text-xs font-bold uppercase tracking-wider text-slate-300">
-            <a href="#triage" className="hover:text-emerald-400 transition-colors">AI Triage</a>
-            <a href="#telehealth" className="hover:text-emerald-400 transition-colors">Telehealth 3D</a>
-            <a href="#vitals" className="hover:text-emerald-400 transition-colors">Live Vitals</a>
+          <nav className="hidden lg:flex items-center gap-6 text-xs font-bold uppercase tracking-wider text-slate-300">
+            <a href="#triage" className="hover:text-emerald-400 transition-colors">01 AI Triage</a>
+            <a href="#telehealth" className="hover:text-emerald-400 transition-colors">02 WebRTC</a>
+            <a href="#vitals" className="hover:text-emerald-400 transition-colors">03 Wearables</a>
+            <a href="#records" className="hover:text-emerald-400 transition-colors">04 EMR Vault</a>
+            <a href="#pharmacy" className="hover:text-emerald-400 transition-colors">05 Pharmacy</a>
             <a href="#doctors" className="hover:text-emerald-400 transition-colors">Specialists</a>
-            <a href="#security" className="hover:text-emerald-400 transition-colors">Security</a>
             <a href="#faq" className="hover:text-emerald-400 transition-colors">FAQ</a>
           </nav>
 
@@ -310,22 +312,32 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* 5. INTERACTIVE 3D AI TRIAGE ENGINE SHOWCASE */}
+      {/* 5. CORE FEATURE 01: AI SYMPTOM CHECKER & DOCTOR TRIAGE QUEUE */}
       <section id="triage" className="py-24 px-6 relative bg-gradient-to-b from-[#030712] via-slate-900/30 to-[#030712]">
         <InteractiveTriage3D />
       </section>
 
-      {/* 6. LIVE 3D TELEHEALTH CONSULTATION STUDIO */}
+      {/* 6. CORE FEATURE 02: REAL-TIME P2P TELEHEALTH (NATIVE WEBRTC) */}
       <section id="telehealth" className="py-24 px-6 border-y border-slate-800/80 bg-slate-950/40">
         <TelehealthSimulator3D />
       </section>
 
-      {/* 7. LIVE BIOMETRIC TELEMETRY & ECG STUDIO */}
+      {/* 7. CORE FEATURE 03: LIVE WEARABLES & VITALS TELEMETRY STREAM */}
       <section id="vitals" className="py-24 px-6 relative">
         <VitalsTelemetry3D />
       </section>
 
-      {/* 8. VERIFIED DOCTOR DISCOVERY & BOOKING SHOWCASE */}
+      {/* 8. CORE FEATURE 04: IMMUTABLE MEDICAL RECORDS (EMR) VAULT */}
+      <section id="records" className="py-24 px-6 border-y border-slate-800/80 bg-slate-950/40">
+        <SecurityVault3D />
+      </section>
+
+      {/* 9. CORE FEATURE 05: PHARMACY GEOLOCATION & PRESCRIPTION DELIVERY */}
+      <section id="pharmacy" className="py-24 px-6 relative">
+        <PharmacyDelivery3D />
+      </section>
+
+      {/* 10. SPECIALIST DISCOVERY & APPOINTMENT SCHEDULING */}
       <section id="doctors" className="py-24 px-6 border-y border-slate-800/80 bg-slate-950/40">
         <DoctorBooking3D />
       </section>
@@ -425,10 +437,6 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* 10. 3D SECURITY & COMPLIANCE VAULT */}
-      <section id="security" className="py-24 px-6 border-y border-slate-800/80 bg-slate-950/40">
-        <SecurityVault3D />
-      </section>
 
       {/* 11. FREQUENTLY ASKED QUESTIONS */}
       <section id="faq" className="py-24 px-6">

@@ -82,13 +82,13 @@ const InteractiveTriage3D = () => {
     <div className="w-full max-w-6xl mx-auto space-y-8">
       <div className="text-center space-y-3">
         <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-black uppercase tracking-widest">
-          <Sparkles size={14} className="animate-spin-slow" /> Interactive AI Decision Support Engine
+          <Sparkles size={14} className="animate-spin-slow" /> Core Feature 01 • OpenRouter AI Triage & Doctor Queue
         </div>
         <h3 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
-          Experience Live AI Clinical Triage in 3D
+          AI Symptom Checker & Real-Time Doctor Triage
         </h3>
         <p className="text-slate-400 text-sm max-w-xl mx-auto font-medium">
-          Select or toggle symptoms below to see how MediConnect's multi-parameter algorithmic engine calculates urgency scores and routes to verified specialists.
+          Patients submit symptoms in natural language. Powered by OpenRouter frontier models, it generates structured JSON severity assessments and emits live Socket.io <code className="text-emerald-400 font-mono text-xs">new-triage-entry</code> events to the Doctor Triage Queue.
         </p>
       </div>
 

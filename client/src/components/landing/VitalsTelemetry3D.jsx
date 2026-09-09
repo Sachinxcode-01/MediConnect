@@ -17,13 +17,13 @@ const VitalsTelemetry3D = () => {
     <div className="w-full max-w-6xl mx-auto space-y-8">
       <div className="text-center space-y-3">
         <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-black uppercase tracking-widest">
-          <HeartPulse size={14} className="animate-pulse" /> Continuous Biometric Telemetry
+          <HeartPulse size={14} className="animate-pulse" /> Core Feature 03 • Live Wearables & WebSocket Stream
         </div>
         <h3 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
-          Real-Time Physiological Telemetry Studio
+          Real-Time Wearables Dashboard & Telemetry
         </h3>
         <p className="text-slate-400 text-sm max-w-xl mx-auto font-medium">
-          Drag the heart-rate slider below to see how our real-time telemetry pipeline detects anomalies and notifies attending physicians within milliseconds.
+          Listens continuously to the backend WebSocket <code className="text-emerald-400 font-mono text-xs">vitals-update</code> channel. Powered by Recharts with dynamic spike detection for heart rate and SpO2 anomalies.
         </p>
       </div>
 
