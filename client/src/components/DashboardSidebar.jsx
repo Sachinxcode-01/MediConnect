@@ -39,27 +39,27 @@ const DashboardSidebar = ({ activeTab, setActiveTab, logout, role }) => {
       {/* Mobile Toggle */}
       <button
         onClick={() => setIsMobileOpen(true)}
-        className="lg:hidden fixed top-4 left-4 z-50 p-3 bg-slate-900 rounded-xl shadow-lg border border-slate-800 hover:border-blue-500 transition-all text-white"
+        className="lg:hidden fixed top-4 left-4 z-50 p-3 bg-slate-900 rounded-xl shadow-lg border border-slate-800 hover:border-emerald-500 transition-all text-white"
       >
-        <Menu className="w-6 h-6 text-blue-500" />
+        <Menu className="w-6 h-6 text-emerald-400" />
       </button>
 
       {/* Desktop Sidebar */}
       <motion.aside
         initial={{ x: -100, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
-        className={`hidden lg:flex flex-col h-screen bg-slate-950 border-r border-slate-800/80 shadow-2xl z-40 sticky top-0 transition-all duration-300 ${
+        className={`hidden lg:flex flex-col h-screen bg-[#030712] border-r border-slate-800/80 shadow-2xl z-40 sticky top-0 transition-all duration-300 ${
           isCollapsed ? 'w-20' : 'w-64'
         }`}
       >
         {/* Logo Section */}
         <div className="p-6 border-b border-slate-800/80">
           <Link to="/" className="flex items-center gap-3 group">
-            <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-600/30 group-hover:scale-105 transition-transform shrink-0">
-              <Activity className="text-white w-5 h-5" />
+            <div className="w-10 h-10 bg-gradient-to-tr from-emerald-500 to-teal-400 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/25 group-hover:scale-105 transition-transform shrink-0">
+              <Activity className="text-slate-950 w-5 h-5 stroke-[2.5]" />
             </div>
             {!isCollapsed && (
-              <span className="text-xl font-black tracking-tight text-white group-hover:text-blue-400 transition-colors">
+              <span className="text-xl font-black tracking-tight text-white group-hover:text-emerald-400 transition-colors">
                 MediConnect
               </span>
             )}
@@ -74,19 +74,19 @@ const DashboardSidebar = ({ activeTab, setActiveTab, logout, role }) => {
               onClick={() => setActiveTab(link.id)}
               className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-200 group relative ${
                 activeTab === link.id
-                  ? 'bg-blue-600/10 text-blue-400 border border-blue-500/30 font-black'
+                  ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/40 font-black shadow-lg shadow-emerald-500/10'
                   : 'text-slate-400 hover:bg-slate-900 hover:text-white font-medium'
               }`}
             >
               <link.icon
                 size={20}
-                className={`relative z-10 ${activeTab === link.id ? 'text-blue-400' : 'group-hover:text-white'} transition-colors`}
+                className={`relative z-10 ${activeTab === link.id ? 'text-emerald-400' : 'group-hover:text-white'} transition-colors`}
               />
               {!isCollapsed && (
                 <span className="relative z-10 text-sm">{link.label}</span>
               )}
               {!isCollapsed && activeTab === link.id && (
-                <ChevronRight className="ml-auto w-4 h-4 text-blue-400" />
+                <ChevronRight className="ml-auto w-4 h-4 text-emerald-400" />
               )}
             </button>
           ))}
@@ -154,8 +154,8 @@ const DashboardSidebar = ({ activeTab, setActiveTab, logout, role }) => {
               {/* Mobile Header */}
               <div className="flex items-center justify-between p-6 border-b border-slate-800">
                 <Link to="/" className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-600/30">
-                    <Activity className="text-white w-5 h-5" />
+                  <div className="w-10 h-10 bg-gradient-to-tr from-emerald-500 to-teal-400 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/25">
+                    <Activity className="text-slate-950 w-5 h-5 stroke-[2.5]" />
                   </div>
                   <span className="text-xl font-black tracking-tight text-white">MediConnect</span>
                 </Link>
@@ -178,11 +178,11 @@ const DashboardSidebar = ({ activeTab, setActiveTab, logout, role }) => {
                     }}
                     className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
                       activeTab === link.id
-                        ? 'bg-blue-600/10 text-blue-400 border border-blue-500/30 font-black'
+                        ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/40 font-black shadow-lg shadow-emerald-500/10'
                         : 'text-slate-400 hover:bg-slate-900 hover:text-white font-medium'
                     }`}
                   >
-                    <link.icon size={20} className={activeTab === link.id ? 'text-blue-400' : ''} />
+                    <link.icon size={20} className={activeTab === link.id ? 'text-emerald-400' : ''} />
                     <span className="text-sm">{link.label}</span>
                   </button>
                 ))}

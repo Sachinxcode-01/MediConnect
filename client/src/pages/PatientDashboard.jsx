@@ -15,6 +15,7 @@ import AINurseCall from '../components/AINurseCall';
 import { io } from 'socket.io-client';
 import DashboardSidebar from '../components/DashboardSidebar';
 import NotificationCenter from '../components/NotificationCenter';
+import Tilt3DCard from '../components/3d/Tilt3DCard';
 
 const PatientDashboard = () => {
   const { user, logout } = useContext(AuthContext);
@@ -454,9 +455,9 @@ const PatientDashboard = () => {
             {/* 1. OVERVIEW TAB */}
             {activeTab === 'overview' && (
               <div className="space-y-8">
-                {/* 4-Stat Live Biometric HUD Strip */}
+                {/* 4-Stat Live Biometric HUD Strip with 3D Tilt */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <div className="p-5 rounded-2xl bg-slate-900/80 backdrop-blur-xl border border-slate-800/80 shadow-xl relative overflow-hidden group hover:border-emerald-500/40 transition-all">
+                  <Tilt3DCard glowColor="rgba(239, 68, 68, 0.2)" borderColor="rgba(239, 68, 68, 0.3)" className="p-5">
                     <div className="flex justify-between items-start mb-2">
                       <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Heart Rate</span>
                       <div className="p-2 rounded-xl bg-red-500/10 text-red-400 border border-red-500/20">
@@ -471,9 +472,9 @@ const PatientDashboard = () => {
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
                       Normal Sinus Rhythm
                     </p>
-                  </div>
+                  </Tilt3DCard>
 
-                  <div className="p-5 rounded-2xl bg-slate-900/80 backdrop-blur-xl border border-slate-800/80 shadow-xl relative overflow-hidden group hover:border-cyan-500/40 transition-all">
+                  <Tilt3DCard glowColor="rgba(6, 182, 212, 0.2)" borderColor="rgba(6, 182, 212, 0.3)" className="p-5">
                     <div className="flex justify-between items-start mb-2">
                       <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Blood Oxygen (SpO₂)</span>
                       <div className="p-2 rounded-xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
@@ -488,9 +489,9 @@ const PatientDashboard = () => {
                       <span className="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
                       Optimal Oxygenation
                     </p>
-                  </div>
+                  </Tilt3DCard>
 
-                  <div className="p-5 rounded-2xl bg-slate-900/80 backdrop-blur-xl border border-slate-800/80 shadow-xl relative overflow-hidden group hover:border-blue-500/40 transition-all">
+                  <Tilt3DCard glowColor="rgba(59, 130, 246, 0.2)" borderColor="rgba(59, 130, 246, 0.3)" className="p-5">
                     <div className="flex justify-between items-start mb-2">
                       <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Blood Pressure</span>
                       <div className="p-2 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20">
@@ -505,9 +506,9 @@ const PatientDashboard = () => {
                       <span className="w-1.5 h-1.5 rounded-full bg-blue-400"></span>
                       Normotensive
                     </p>
-                  </div>
+                  </Tilt3DCard>
 
-                  <div className="p-5 rounded-2xl bg-slate-900/80 backdrop-blur-xl border border-slate-800/80 shadow-xl relative overflow-hidden group hover:border-amber-500/40 transition-all">
+                  <Tilt3DCard glowColor="rgba(245, 158, 11, 0.2)" borderColor="rgba(245, 158, 11, 0.3)" className="p-5">
                     <div className="flex justify-between items-start mb-2">
                       <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Body Temp</span>
                       <div className="p-2 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20">
@@ -522,7 +523,7 @@ const PatientDashboard = () => {
                       <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
                       Normothermic
                     </p>
-                  </div>
+                  </Tilt3DCard>
                 </div>
 
                 {/* Main Grid: Telemetry Graph + Quick Actions */}

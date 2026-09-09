@@ -12,6 +12,7 @@ import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import DashboardSidebar from '../components/DashboardSidebar';
 import NotificationCenter from '../components/NotificationCenter';
+import Tilt3DCard from '../components/3d/Tilt3DCard';
 import ReactMarkdown from 'react-markdown';
 
 const DoctorDashboard = () => {
@@ -247,17 +248,19 @@ const DoctorDashboard = () => {
           </div>
         </header>
 
-        {/* 4 Clinical KPI Metrics Cards */}
+        {/* 4 Clinical KPI Metrics Cards with 3D Tilt */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           {[
-            { label: 'Triage Queue', value: queue.length, icon: Activity, trend: 'Real-time sync', color: 'text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/20' },
-            { label: 'Patient Registry', value: patients.length, icon: Users, trend: 'Verified identities', color: 'text-cyan-400', bg: 'bg-cyan-500/10', border: 'border-cyan-500/20' },
-            { label: 'Consultations', value: appointments.length, icon: Calendar, trend: 'Today roster', color: 'text-purple-400', bg: 'bg-purple-500/10', border: 'border-purple-500/20' },
-            { label: 'Prescription Ledger', value: prescriptions.length, icon: Database, trend: 'Encrypted ledger', color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' }
+            { label: 'Triage Queue', value: queue.length, icon: Activity, trend: 'Real-time sync', color: 'text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/20', glow: 'rgba(239, 68, 68, 0.2)', stroke: 'rgba(239, 68, 68, 0.3)' },
+            { label: 'Patient Registry', value: patients.length, icon: Users, trend: 'Verified identities', color: 'text-cyan-400', bg: 'bg-cyan-500/10', border: 'border-cyan-500/20', glow: 'rgba(6, 182, 212, 0.2)', stroke: 'rgba(6, 182, 212, 0.3)' },
+            { label: 'Consultations', value: appointments.length, icon: Calendar, trend: 'Today roster', color: 'text-purple-400', bg: 'bg-purple-500/10', border: 'border-purple-500/20', glow: 'rgba(168, 85, 247, 0.2)', stroke: 'rgba(168, 85, 247, 0.3)' },
+            { label: 'Prescription Ledger', value: prescriptions.length, icon: Database, trend: 'Encrypted ledger', color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20', glow: 'rgba(16, 185, 129, 0.2)', stroke: 'rgba(16, 185, 129, 0.3)' }
           ].map((kpi, i) => (
-            <div 
+            <Tilt3DCard 
               key={i}
-              className="p-5 rounded-2xl bg-slate-900/80 backdrop-blur-xl border border-slate-800/80 shadow-xl relative overflow-hidden group hover:border-slate-700 transition-all"
+              glowColor={kpi.glow}
+              borderColor={kpi.stroke}
+              className="p-5"
             >
               <div className="flex justify-between items-start mb-2">
                 <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">{kpi.label}</span>
@@ -272,7 +275,7 @@ const DoctorDashboard = () => {
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
                 {kpi.trend}
               </p>
-            </div>
+            </Tilt3DCard>
           ))}
         </div>
 
