@@ -33,6 +33,7 @@ curl http://localhost/health
 ## 2. Cloud Platform Deployment
 
 ### Prerequisites & Managed Services
+
 - **Database & Auth:** MongoDB Atlas or Supabase PostgreSQL Project
 - **Backend Service:** Render / Railway / AWS App Runner / Fly.io (Node.js 20+)
 - **Frontend Service:** Vercel / Netlify / Cloudflare Pages (React 19 + Vite)
@@ -44,6 +45,7 @@ curl http://localhost/health
 ## 3. Production Environment Variables
 
 ### Backend (`server/.env`)
+
 ```bash
 PORT=5000
 NODE_ENV=production
@@ -58,6 +60,7 @@ CLOUDINARY_API_SECRET=your-api-secret
 ```
 
 ### Frontend (`client/.env`)
+
 ```bash
 VITE_API_URL=https://your-backend.onrender.com
 ```
@@ -67,6 +70,7 @@ VITE_API_URL=https://your-backend.onrender.com
 ## 4. Production Verification & Health Probes
 
 Verify deployment health using the built-in system probes:
+
 - **Liveness Probe:** `GET /health/live` (Expect `200 OK`, process uptime)
 - **Readiness Probe:** `GET /health/ready` (Expect `200 OK`, database latency status)
 - **Deep Metrics:** `GET /health/metrics` (Expect `200 OK`, memory, sockets, process telemetry)
