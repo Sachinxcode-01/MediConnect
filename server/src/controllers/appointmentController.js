@@ -13,35 +13,35 @@ export const createAppointment = async (req, res, next) => {
   try {
     const { patientId, doctorId, title, description, startTime, endTime, type } = req.body;
 
+    const targetPatientId = patientId || req.user?.id || req.user?._id;
+    const targetDoctorId = doctorId || req.body.doctor;
+
+    if (!targetDoctorId) {
+      return res.status(400).json({ success: false, message: 'Doctor ID is required' });
+    }
+
+    const start = startTime ? new Date(startTime) : new Date(Date.now() + 86400000);
+    const end = endTime ? new Date(endTime) : new Date(start.getTime() + 1800000);
+
     // Validate times
-    if (new Date(startTime) >= new Date(endTime)) {
+    if (start >= end) {
       return res.status(400).json({ success: false, message: 'End time must be after start time' });
     }
 
-    const conflict = await Appointment.findOne({
-      doctor: doctorId,
-      startTime: { $lt: endTime },
-      endTime: { $gt: startTime }
-    });
-
-    if (conflict) {
-      return res.status(409).json({ success: false, message: 'Time slot conflict' });
-    }
-
     const appointment = await Appointment.create({
-      patient: patientId,
-      doctor: doctorId,
-      title,
-      description,
-      startTime,
-      endTime,
+      patient: targetPatientId,
+      doctor: targetDoctorId,
+      title: title || 'Virtual Clinical Consultation',
+      description: description || 'Clinical encounter',
+      startTime: start.toISOString(),
+      endTime: end.toISOString(),
       type: type || 'video',
       roomCode: generateRoomCode()
     });
 
     const populated = await Appointment.findById(appointment.id);
 
-    res.status(201).json({ success: true, data: populated });
+    res.status(201).json({ success: true, data: populated || appointment });
   } catch (error) {
     next(error);
   }

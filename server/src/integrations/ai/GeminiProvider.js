@@ -1,5 +1,8 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { AIProvider } from './AIProvider.js';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 const RED_FLAG_KEYWORDS = [
   'chest pain', 'heart attack', 'shortness of breath', 'difficulty breathing',
@@ -32,7 +35,7 @@ export class GeminiProvider extends AIProvider {
     }
 
     const detectedRedFlags = this.checkEmergencyRedFlags(symptoms);
-    const modelName = 'gemini-2.0-flash';
+    const modelName = 'gemini-1.5-flash';
     const model = this.genAI.getGenerativeModel({
       model: modelName,
       generationConfig: { responseMimeType: "application/json" }
@@ -58,7 +61,16 @@ export class GeminiProvider extends AIProvider {
       }
     `;
 
-    const result = await model.generateContent(prompt);
+    // Timeout protection
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Gemini API request timed out')), 6000)
+    );
+
+    const result = await Promise.race([
+      model.generateContent(prompt),
+      timeoutPromise
+    ]);
+
     const text = (await result.response).text();
     let parsed = JSON.parse(text);
 
@@ -75,27 +87,33 @@ export class GeminiProvider extends AIProvider {
 
   async analyzeConsultation(chatHistory) {
     if (!this.isAvailable()) throw new Error('Gemini API key is not configured');
-    const model = this.genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+    const model = this.genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
     const prompt = `
       You are an expert clinical scribe. Analyze the consultation chat history and generate a professional clinical brief in Markdown.
       Chat History:
       ${chatHistory}
     `;
-    const result = await model.generateContent(prompt);
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Gemini API request timed out')), 6000)
+    );
+    const result = await Promise.race([
+      model.generateContent(prompt),
+      timeoutPromise
+    ]);
     return (await result.response).text();
   }
 
   async getAIChatResponse(messages) {
     if (!this.isAvailable()) throw new Error('Gemini API key is not configured');
-    const model = this.genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
-    const chat = model.startChat({
-      history: messages.slice(0, -1).map(msg => ({
-        role: msg.role === 'assistant' ? 'model' : 'user',
-        parts: [{ text: msg.content }],
-      })),
-    });
-    const lastMessage = messages[messages.length - 1].content;
-    const result = await chat.sendMessage(lastMessage);
+    const model = this.genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const prompt = messages.map(m => `${m.role}: ${m.content}`).join('\n');
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Gemini API request timed out')), 6000)
+    );
+    const result = await Promise.race([
+      model.generateContent(prompt),
+      timeoutPromise
+    ]);
     return (await result.response).text();
   }
 }

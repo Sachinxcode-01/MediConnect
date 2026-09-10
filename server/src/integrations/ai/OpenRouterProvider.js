@@ -9,6 +9,7 @@ export class OpenRouterProvider extends AIProvider {
       this.client = new OpenAI({
         baseURL: 'https://openrouter.ai/api/v1',
         apiKey: apiKey,
+        timeout: 8000,
         defaultHeaders: {
           'HTTP-Referer': 'https://mediconnect.ai',
           'X-Title': 'MediConnect'
@@ -21,11 +22,11 @@ export class OpenRouterProvider extends AIProvider {
     return Boolean(this.client);
   }
 
-  async analyzeSymptoms(symptoms, vitalSigns = null) {
+  async analyzeSymptoms(symptoms) {
     if (!this.isAvailable()) throw new Error('OpenRouter API key not configured');
 
     const response = await this.client.chat.completions.create({
-      model: 'meta-llama/llama-3-70b-instruct',
+      model: 'meta-llama/llama-3.3-70b-instruct',
       messages: [
         {
           role: 'system',
@@ -37,14 +38,14 @@ export class OpenRouterProvider extends AIProvider {
     });
 
     const parsed = JSON.parse(response.choices[0].message.content);
-    parsed.model_info = { provider: this.name, model: 'llama-3-70b-instruct', timestamp: new Date().toISOString() };
+    parsed.model_info = { provider: this.name, model: 'llama-3.3-70b-instruct', timestamp: new Date().toISOString() };
     return parsed;
   }
 
   async analyzeConsultation(chatHistory) {
     if (!this.isAvailable()) throw new Error('OpenRouter API key not configured');
     const response = await this.client.chat.completions.create({
-      model: 'meta-llama/llama-3-70b-instruct',
+      model: 'meta-llama/llama-3.3-70b-instruct',
       messages: [
         { role: 'system', content: 'Generate a clinical brief in Markdown.' },
         { role: 'user', content: chatHistory }
@@ -56,7 +57,7 @@ export class OpenRouterProvider extends AIProvider {
   async getAIChatResponse(messages) {
     if (!this.isAvailable()) throw new Error('OpenRouter API key not configured');
     const response = await this.client.chat.completions.create({
-      model: 'meta-llama/llama-3-70b-instruct',
+      model: 'meta-llama/llama-3.3-70b-instruct',
       messages: messages
     });
     return response.choices[0].message.content;

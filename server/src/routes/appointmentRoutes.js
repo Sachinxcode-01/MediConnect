@@ -13,6 +13,14 @@ import { protect } from '../middleware/auth.js';
 
 const router = express.Router();
 
+// Base route: returns doctor or patient appointments depending on user role
+router.get('/', protect, (req, res, next) => {
+  if (req.user?.role === 'doctor' || req.user?.role === 'admin') {
+    return getDoctorAppointments(req, res, next);
+  }
+  return getPatientAppointments(req, res, next);
+});
+
 router.post('/', protect, createAppointment);
 router.get('/patient', protect, getPatientAppointments);
 router.get('/doctor', protect, getDoctorAppointments);

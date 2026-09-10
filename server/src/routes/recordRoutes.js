@@ -7,15 +7,25 @@ import {
   updateRecord, 
   deleteRecord,
   getDoctorRecords,
-  saveScribeBrief
+  saveScribeBrief,
+  summarizeRecord,
+  upload
 } from '../controllers/recordController.js';
-
 import { protect, authorize } from '../middleware/auth.js';
 
 const router = express.Router();
 
-router.post('/', protect, authorize('doctor', 'admin'), createRecord);
+// Base GET route for medical records
+router.get('/', protect, (req, res, next) => {
+  if (req.user?.role === 'doctor') {
+    return getDoctorRecords(req, res, next);
+  }
+  return getMyRecords(req, res, next);
+});
+
+router.post('/', protect, upload.single('file'), createRecord);
 router.post('/scribe', protect, authorize('doctor'), saveScribeBrief);
+router.post('/:id/summarize', protect, summarizeRecord);
 router.get('/my', protect, getMyRecords);
 
 router.get('/patient/:patientId', protect, getPatientRecords);

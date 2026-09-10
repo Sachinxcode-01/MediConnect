@@ -1,85 +1,155 @@
-import supabase from '../config/supabase.js';
+import supabase, { isSupabaseOnline } from '../config/supabase.js';
+import { localStore } from './localStore.js';
 
 class MedicalRecord {
   constructor(data) {
-    this._id = data.id;
-    this.id = data.id;
-    this.patient = data.patient_id;
-    this.doctor = data.doctor_id;
-    this.type = data.type;
+    this._id = data.id || data._id;
+    this.id = data.id || data._id;
+    this.patient = data.patient_id || data.patient;
+    this.patientId = data.patient_id || data.patient;
+    this.doctor = data.doctor_id || data.doctor;
+    this.doctorId = data.doctor_id || data.doctor;
+    this.type = data.type || 'Report';
     this.title = data.title;
-    this.description = data.description;
-    this.fileUrl = data.file_url || '';
+    this.description = data.description || '';
+    this.fileUrl = data.file_url || data.fileUrl || '';
+    this.fileName = data.file_name || data.fileName || 'record.pdf';
+    this.fileSize = data.file_size || data.fileSize || 0;
+    this.hash = data.hash || '';
     this.tags = data.tags || [];
-    this.visitDate = data.date || data.visitDate;
-    this.createdAt = data.created_at;
+    this.visitDate = data.date || data.visitDate || new Date().toISOString().split('T')[0];
+    this.createdAt = data.created_at || data.createdAt || new Date().toISOString();
   }
 
   static async create(data) {
+    const newId = `rec-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
     const row = {
-      patient_id: data.patient,
-      doctor_id: data.doctor,
-      type: data.type,
+      id: newId,
+      _id: newId,
+      patient_id: data.patient || data.patientId,
+      doctor_id: data.doctor || data.doctorId,
+      type: data.type || 'Report',
       title: data.title,
-      description: data.description,
+      description: data.description || '',
       file_url: data.fileUrl || '',
+      file_name: data.fileName || 'record.pdf',
+      file_size: data.fileSize || 0,
+      hash: data.hash || '',
       tags: data.tags || [],
       date: data.visitDate ? new Date(data.visitDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+      created_at: new Date().toISOString()
     };
 
-    const { data: inserted, error } = await supabase
-      .from('medical_records')
-      .insert(row)
-      .select()
-      .single();
+    if (isSupabaseOnline()) {
+      try {
+        const { data: inserted, error } = await supabase
+          .from('medical_records')
+          .insert(row)
+          .select()
+          .single();
 
-    if (error) throw error;
-    return new MedicalRecord(inserted);
+        if (!error && inserted) {
+          return new MedicalRecord(inserted);
+        }
+      } catch {
+        // Fall through
+      }
+    }
+
+    localStore.medicalRecords.unshift(row);
+    return new MedicalRecord(row);
   }
 
-  static async find(query) {
-    let q = supabase
-      .from('medical_records')
-      .select(`*, patient:patients!patient_id(id, user_id, users!user_id(name, email)), doctor:doctors!doctor_id(id, user_id, specialization, users!user_id(name))`);
+  static async find(query = {}) {
+    if (isSupabaseOnline()) {
+      try {
+        let q = supabase.from('medical_records').select('*');
+        if (query.patient) q = q.eq('patient_id', query.patient);
+        if (query.doctor) q = q.eq('doctor_id', query.doctor);
+        q = q.order('created_at', { ascending: false }).limit(query.limit || 100);
 
-    if (query.patient) q = q.eq('patient_id', query.patient);
-    if (query.doctor) q = q.eq('doctor_id', query.doctor);
-    q = q.order('created_at', { ascending: false }).limit(query.limit || 100);
+        const { data, error } = await q;
+        if (!error && data && data.length > 0) {
+          return data.map(r => new MedicalRecord(r));
+        }
+      } catch {
+        // Fall through
+      }
+    }
 
-    const { data, error } = await q;
-    if (error) throw error;
-    return (data || []).map(r => new MedicalRecord(r));
+    let results = localStore.medicalRecords;
+    if (query.patient) {
+      results = results.filter(r => r.patient_id === query.patient || r.patient === query.patient);
+    }
+    if (query.doctor) {
+      results = results.filter(r => r.doctor_id === query.doctor || r.doctor === query.doctor);
+    }
+
+    return results.map(r => new MedicalRecord(r));
   }
 
   static async findById(id) {
-    const { data, error } = await supabase
-      .from('medical_records')
-      .select('*')
-      .eq('id', id)
-      .single();
+    if (isSupabaseOnline()) {
+      try {
+        const { data, error } = await supabase
+          .from('medical_records')
+          .select('*')
+          .eq('id', id)
+          .single();
 
-    if (error || !data) return null;
-    return new MedicalRecord(data);
+        if (!error && data) return new MedicalRecord(data);
+      } catch {
+        // Fall through
+      }
+    }
+
+    const found = localStore.medicalRecords.find(r => r.id === id || r._id === id);
+    return found ? new MedicalRecord(found) : null;
   }
 
-  static async findByIdAndUpdate(id, updates, opts) {
-    const { data, error } = await supabase
-      .from('medical_records')
-      .update(updates)
-      .eq('id', id)
-      .select()
-      .single();
+  static async findByIdAndUpdate(id, updates) {
+    if (isSupabaseOnline()) {
+      try {
+        const { data, error } = await supabase
+          .from('medical_records')
+          .update(updates)
+          .eq('id', id)
+          .select()
+          .single();
 
-    if (error) throw error;
-    return new MedicalRecord(data);
+        if (!error && data) return new MedicalRecord(data);
+      } catch {
+        // Fall through
+      }
+    }
+
+    const index = localStore.medicalRecords.findIndex(r => r.id === id || r._id === id);
+    if (index !== -1) {
+      localStore.medicalRecords[index] = {
+        ...localStore.medicalRecords[index],
+        ...updates
+      };
+      return new MedicalRecord(localStore.medicalRecords[index]);
+    }
+    return null;
   }
 
   async deleteOne() {
-    const { error } = await supabase
-      .from('medical_records')
-      .delete()
-      .eq('id', this._id);
-    if (error) throw error;
+    if (isSupabaseOnline()) {
+      try {
+        await supabase
+          .from('medical_records')
+          .delete()
+          .eq('id', this._id);
+      } catch {
+        // Fall through
+      }
+    }
+
+    const index = localStore.medicalRecords.findIndex(r => r.id === this._id || r._id === this._id);
+    if (index !== -1) {
+      localStore.medicalRecords.splice(index, 1);
+    }
   }
 }
 
