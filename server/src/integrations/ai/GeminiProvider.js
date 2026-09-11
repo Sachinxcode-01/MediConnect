@@ -35,7 +35,7 @@ export class GeminiProvider extends AIProvider {
     }
 
     const detectedRedFlags = this.checkEmergencyRedFlags(symptoms);
-    const modelName = 'gemini-1.5-flash';
+    const modelName = 'gemini-3.6-flash';
     const model = this.genAI.getGenerativeModel({
       model: modelName,
       generationConfig: { responseMimeType: "application/json" }
@@ -63,7 +63,7 @@ export class GeminiProvider extends AIProvider {
 
     // Timeout protection
     const timeoutPromise = new Promise((_, reject) => 
-      setTimeout(() => reject(new Error('Gemini API request timed out')), 6000)
+      setTimeout(() => reject(new Error('Gemini API request timed out')), 10000)
     );
 
     const result = await Promise.race([
@@ -87,14 +87,14 @@ export class GeminiProvider extends AIProvider {
 
   async analyzeConsultation(chatHistory) {
     if (!this.isAvailable()) throw new Error('Gemini API key is not configured');
-    const model = this.genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = this.genAI.getGenerativeModel({ model: "gemini-3.6-flash" });
     const prompt = `
       You are an expert clinical scribe. Analyze the consultation chat history and generate a professional clinical brief in Markdown.
       Chat History:
       ${chatHistory}
     `;
     const timeoutPromise = new Promise((_, reject) => 
-      setTimeout(() => reject(new Error('Gemini API request timed out')), 6000)
+      setTimeout(() => reject(new Error('Gemini API request timed out')), 10000)
     );
     const result = await Promise.race([
       model.generateContent(prompt),
@@ -105,10 +105,10 @@ export class GeminiProvider extends AIProvider {
 
   async getAIChatResponse(messages) {
     if (!this.isAvailable()) throw new Error('Gemini API key is not configured');
-    const model = this.genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = this.genAI.getGenerativeModel({ model: "gemini-3.6-flash" });
     const prompt = messages.map(m => `${m.role}: ${m.content}`).join('\n');
     const timeoutPromise = new Promise((_, reject) => 
-      setTimeout(() => reject(new Error('Gemini API request timed out')), 6000)
+      setTimeout(() => reject(new Error('Gemini API request timed out')), 10000)
     );
     const result = await Promise.race([
       model.generateContent(prompt),
