@@ -9,7 +9,9 @@
     "dev:ts": "tsx watch src/server.ts",
     "build": "tsc",
     "start": "node src/server.js",
-    "seed": "node src/utils/seed.js"
+    "seed": "node src/utils/seed.js",
+    "test:keys": "node test_keys_prd.js",
+    "test:e2e": "node test_e2e.js"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
