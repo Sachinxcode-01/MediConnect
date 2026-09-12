@@ -111,6 +111,12 @@ export const getTriageEntry = async (req, res, next) => {
     if (!entry) {
       return res.status(404).json({ success: false, message: 'Triage entry not found' });
     }
+
+    const patientId = entry.patientId || entry.patient?.id || entry.patient?._id || entry.patient;
+    if (req.user.role === 'patient' && String(patientId) !== String(req.user.id)) {
+      return res.status(403).json({ success: false, message: 'Not authorized to view this triage case' });
+    }
+
     res.status(200).json({ success: true, data: entry });
   } catch (error) {
     next(error);

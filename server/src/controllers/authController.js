@@ -425,10 +425,10 @@ export const updatePassword = async (req, res, next) => {
       });
     }
 
-    user.password = newPassword;
-    await user.save();
+    await User.updatePassword(req.user.id, newPassword);
+    const updatedUser = await User.findById(req.user.id);
 
-    sendTokenResponse(user, 200, res);
+    sendTokenResponse(updatedUser, 200, res);
   } catch (error) {
     next(error);
   }

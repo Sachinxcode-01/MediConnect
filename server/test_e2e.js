@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import http from 'http';
 import { createServer } from 'http';
 import express from 'express';
@@ -47,10 +48,20 @@ const TEST_PORT = 5099;
 
 httpServer.listen(TEST_PORT, async () => {
   console.log(`\n==================================================`);
-  console.log(`🏥 MediConnect End-to-End Test Suite Starting...`);
+  console.log(`🏥 MediConnect Comprehensive E2E Test Suite Starting...`);
   console.log(`==================================================\n`);
 
   const baseUrl = `http://localhost:${TEST_PORT}/api`;
+
+  const cleanupAndExit = (code = 0) => {
+    if (httpServer.closeAllConnections) {
+      httpServer.closeAllConnections();
+    }
+    httpServer.close(() => {
+      process.exit(code);
+    });
+    setTimeout(() => process.exit(code), 1000).unref();
+  };
 
   try {
     // 1. Patient Login
@@ -89,8 +100,57 @@ httpServer.listen(TEST_PORT, async () => {
     const adminToken = adminLogin.token;
     console.log(`   ✅ Admin authenticated: ${adminLogin.user.name} (${adminLogin.user.email})`);
 
-    // 4. Doctor Discovery
-    console.log('\n4️⃣ Testing Doctor Discovery Endpoint...');
+    // 4. Authentication Failure & Error Handling
+    console.log('\n4️⃣ Testing Auth Failure / Invalid Credentials Handling...');
+    res = await fetch(`${baseUrl}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: 'patient@mediconnect.ai', password: 'wrongPassword123' })
+    });
+    const badLogin = await res.json();
+    if (res.status !== 401 || badLogin.success !== false) {
+      throw new Error(`Expected 401 status for invalid credentials, got ${res.status}`);
+    }
+    console.log(`   ✅ Rejected invalid credentials cleanly with HTTP 401: "${badLogin.message}"`);
+
+    // 5. RBAC Enforcement: Patient Forbidden from Doctor/Admin Endpoints
+    console.log('\n5️⃣ Testing RBAC Authorization Boundaries...');
+    res = await fetch(`${baseUrl}/admin/stats`, {
+      headers: { 'Authorization': `Bearer ${patientToken}` }
+    });
+    if (res.status !== 403) {
+      throw new Error(`Expected 403 for patient accessing admin stats, got ${res.status}`);
+    }
+    console.log(`   ✅ Patient blocked from Admin Stats (HTTP 403 Forbidden)`);
+
+    res = await fetch(`${baseUrl}/patients`, {
+      headers: { 'Authorization': `Bearer ${patientToken}` }
+    });
+    if (res.status !== 403) {
+      throw new Error(`Expected 403 for patient accessing full patient directory, got ${res.status}`);
+    }
+    console.log(`   ✅ Patient blocked from Patient Directory (HTTP 403 Forbidden)`);
+
+    // 6. IDOR Prevention: Medical Records & Vitals
+    console.log('\n6️⃣ Testing IDOR & Healthcare Data Protection...');
+    res = await fetch(`${baseUrl}/records/patient/usr-other-patient-999`, {
+      headers: { 'Authorization': `Bearer ${patientToken}` }
+    });
+    if (res.status !== 403) {
+      throw new Error(`Expected 403 when patient accesses another patient's records, got ${res.status}`);
+    }
+    console.log(`   ✅ IDOR blocked: Patient cannot access another patient's medical records (HTTP 403)`);
+
+    res = await fetch(`${baseUrl}/vitals/latest?patientId=usr-other-patient-999`, {
+      headers: { 'Authorization': `Bearer ${patientToken}` }
+    });
+    if (res.status !== 403) {
+      throw new Error(`Expected 403 when patient accesses another patient's vitals, got ${res.status}`);
+    }
+    console.log(`   ✅ IDOR blocked: Patient cannot query another patient's telemetry (HTTP 403)`);
+
+    // 7. Doctor Discovery
+    console.log('\n7️⃣ Testing Doctor Discovery Endpoint...');
     res = await fetch(`${baseUrl}/doctors`, {
       headers: { 'Authorization': `Bearer ${patientToken}` }
     });
@@ -98,8 +158,8 @@ httpServer.listen(TEST_PORT, async () => {
     if (!doctorsList.success || doctorsList.count === 0) throw new Error('Doctor discovery failed');
     console.log(`   ✅ Found ${doctorsList.count} verified doctors. Featured: ${doctorsList.data[0].name} (${doctorsList.data[0].specialty})`);
 
-    // 5. AI Triage Submission
-    console.log('\n5️⃣ Testing AI Triage Clinical Assessment...');
+    // 8. AI Triage Submission
+    console.log('\n8️⃣ Testing AI Triage Clinical Assessment...');
     res = await fetch(`${baseUrl}/triage`, {
       method: 'POST',
       headers: {
@@ -113,12 +173,12 @@ httpServer.listen(TEST_PORT, async () => {
     const triageRes = await res.json();
     if (!triageRes.success || !triageRes.data) throw new Error('AI Triage submission failed');
     console.log(`   ✅ Triage assessment generated:`);
-    console.log(`      Severity: ${triageRes.data.severity.toUpperCase()}`);
+    console.log(`      Severity: ${triageRes.data.severity?.toUpperCase()}`);
     console.log(`      Detected: ${triageRes.data.aiAnalysis?.symptoms_detected?.join(', ') || 'Symptoms logged'}`);
     console.log(`      Next Step: ${triageRes.data.aiAnalysis?.recommended_next_step}`);
 
-    // 6. Appointment Booking Flow
-    console.log('\n6️⃣ Testing Telehealth Appointment Scheduling...');
+    // 9. Appointment Booking Flow & Status Lifecycle
+    console.log('\n9️⃣ Testing Telehealth Appointment Scheduling & Cancellation Lifecycle...');
     res = await fetch(`${baseUrl}/appointments`, {
       method: 'POST',
       headers: {
@@ -136,18 +196,39 @@ httpServer.listen(TEST_PORT, async () => {
     });
     const aptRes = await res.json();
     if (!aptRes.success || !aptRes.data) throw new Error('Appointment booking failed');
-    console.log(`   ✅ Appointment confirmed! ID: ${aptRes.data.id}, Room: ${aptRes.data.roomCode || aptRes.data.room_code}`);
+    const appointmentId = aptRes.data.id || aptRes.data._id;
+    console.log(`   ✅ Appointment confirmed! ID: ${appointmentId}, Room: ${aptRes.data.roomCode || aptRes.data.room_code}`);
 
-    // 7. Doctor Viewing Appointments
-    console.log('\n7️⃣ Doctor Checking Daily Schedule...');
-    res = await fetch(`${baseUrl}/appointments`, {
-      headers: { 'Authorization': `Bearer ${doctorToken}` }
+    // Doctor confirms appointment
+    res = await fetch(`${baseUrl}/appointments/${appointmentId}/status`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${doctorToken}`
+      },
+      body: JSON.stringify({ status: 'confirmed' })
     });
-    const docApts = await res.json();
-    console.log(`   ✅ Doctor retrieved ${docApts.count} scheduled appointments.`);
+    const confirmRes = await res.json();
+    if (!confirmRes.success) throw new Error('Appointment confirmation failed');
+    console.log(`   ✅ Appointment status transitioned to: ${confirmRes.data.status}`);
 
-    // 8. Doctor Issuing Prescription
-    console.log('\n8️⃣ Doctor Issuing Digital Prescription...');
+    // Patient cancels appointment (verifying no populate crash)
+    res = await fetch(`${baseUrl}/appointments/${appointmentId}/cancel`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${patientToken}`
+      },
+      body: JSON.stringify({ reason: 'Rescheduled by patient request' })
+    });
+    const cancelRes = await res.json();
+    if (!cancelRes.success || cancelRes.data.status !== 'cancelled') {
+      throw new Error('Appointment cancellation failed');
+    }
+    console.log(`   ✅ Appointment cleanly cancelled without crashes (Status: ${cancelRes.data.status})`);
+
+    // 10. Doctor Issuing Prescription
+    console.log('\n🔟 Doctor Issuing Digital Prescription...');
     res = await fetch(`${baseUrl}/prescriptions`, {
       method: 'POST',
       headers: {
@@ -155,7 +236,7 @@ httpServer.listen(TEST_PORT, async () => {
         'Authorization': `Bearer ${doctorToken}`
       },
       body: JSON.stringify({
-        patientId: patientLogin.user._id,
+        patientId: patientLogin.user._id || patientLogin.user.id,
         medication: 'Amoxicillin / Clavulanate',
         dosage: '500mg/125mg',
         frequency: 'Twice daily with meals',
@@ -167,8 +248,8 @@ httpServer.listen(TEST_PORT, async () => {
     if (!rxRes.success || !rxRes.data) throw new Error('Prescription issuance failed');
     console.log(`   ✅ Prescription issued for ${rxRes.data.medication} (${rxRes.data.dosage})`);
 
-    // 9. Patient Checking Prescriptions & Pharmacy Delivery
-    console.log('\n9️⃣ Patient Checking Prescriptions & Pharmacy Radar...');
+    // 11. Patient Checking Prescriptions & Pharmacy Radar
+    console.log('\n1️⃣1️⃣ Patient Checking Prescriptions & Pharmacy Radar...');
     res = await fetch(`${baseUrl}/prescriptions/my`, {
       headers: { 'Authorization': `Bearer ${patientToken}` }
     });
@@ -181,8 +262,8 @@ httpServer.listen(TEST_PORT, async () => {
     const pharmacies = await res.json();
     console.log(`   ✅ Nearby pharmacies discovered: ${pharmacies.count} locations.`);
 
-    // 10. Wearable Telemetry Ingestion
-    console.log('\n🔟 Testing Wearable Vitals Telemetry Stream...');
+    // 12. Wearable Telemetry Ingestion
+    console.log('\n1️⃣2️⃣ Testing Wearable Vitals Telemetry Stream...');
     res = await fetch(`${baseUrl}/vitals`, {
       method: 'POST',
       headers: {
@@ -201,32 +282,36 @@ httpServer.listen(TEST_PORT, async () => {
     if (!vitalsRes.success || !vitalsRes.data) throw new Error('Vitals telemetry failed');
     console.log(`   ✅ Vitals ingested: HR ${vitalsRes.data.heartRate} bpm, SpO2 ${vitalsRes.data.spo2}%, BP ${vitalsRes.data.bloodPressure}`);
 
-    // 11. Medical Records EMR Vault
-    console.log('\n1️⃣1️⃣ Testing Medical Records Vault...');
+    // 13. Medical Records EMR Vault
+    console.log('\n1️⃣3️⃣ Testing Medical Records Vault...');
     res = await fetch(`${baseUrl}/records`, {
       headers: { 'Authorization': `Bearer ${patientToken}` }
     });
     const recordsRes = await res.json();
     console.log(`   ✅ EMR records retrieved: ${recordsRes.count} verified documents.`);
 
-    // 12. Admin Command Center
-    console.log('\n1️⃣2️⃣ Testing Admin Command Center & Metrics...');
+    // 14. Admin Command Center & Real Audit Logs
+    console.log('\n1️⃣4️⃣ Testing Admin Command Center & Real Audit Logs...');
     res = await fetch(`${baseUrl}/admin/stats`, {
       headers: { 'Authorization': `Bearer ${adminToken}` }
     });
     const adminStats = await res.json();
-    console.log(`   ✅ Admin metrics retrieved:`);
-    console.log(`      Total Users: ${adminStats.data.totalUsers}`);
-    console.log(`      Triage Cases: ${adminStats.data.totalTriageCases}`);
-    console.log(`      System Health: ${adminStats.data.systemHealth}`);
+    console.log(`   ✅ Admin metrics retrieved: Users=${adminStats.data.totalUsers}, Health=${adminStats.data.systemHealth}`);
+
+    res = await fetch(`${baseUrl}/admin/audit-logs`, {
+      headers: { 'Authorization': `Bearer ${adminToken}` }
+    });
+    const auditLogsRes = await res.json();
+    if (!auditLogsRes.success || !Array.isArray(auditLogsRes.data)) throw new Error('Audit logs retrieval failed');
+    console.log(`   ✅ Admin Audit Logs: ${auditLogsRes.count} persisted security event records retrieved.`);
 
     console.log(`\n==================================================`);
-    console.log(`🎉 ALL 12 END-TO-END FEATURES FULLY VERIFIED & WORKING!`);
+    console.log(`🎉 ALL 14 TEST SUITES (AUTH, RBAC, IDOR, WORKFLOWS) PASSED!`);
     console.log(`==================================================\n`);
 
-    httpServer.close(() => process.exit(0));
+    cleanupAndExit(0);
   } catch (err) {
     console.error('\n❌ E2E Test Failed:', err);
-    httpServer.close(() => process.exit(1));
+    cleanupAndExit(1);
   }
 });

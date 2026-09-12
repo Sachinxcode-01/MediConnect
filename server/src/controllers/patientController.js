@@ -48,6 +48,12 @@ export const getPatients = async (req, res, next) => {
 export const getPatientById = async (req, res, next) => {
   try {
     const { id } = req.params;
+
+    // RBAC & IDOR: Patient can only view their own profile; Doctors and Admins can view patient details
+    if (req.user.role === 'patient' && String(req.user.id) !== String(id)) {
+      return res.status(403).json({ success: false, message: 'Not authorized to view another patient\'s details' });
+    }
+
     let user = null;
 
     try {

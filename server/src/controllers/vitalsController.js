@@ -82,6 +82,11 @@ export const getLatestVitals = async (req, res, next) => {
     const { patientId } = req.query;
     const patient = patientId || req.user.id;
 
+    // Authorization check
+    if (String(patient) !== String(req.user.id) && req.user.role !== 'doctor' && req.user.role !== 'admin') {
+      return res.status(403).json({ success: false, message: 'Not authorized to view another patient\'s vitals' });
+    }
+
     const vitals = await VitalsLog.findOne({ patient });
 
     if (!vitals) {

@@ -40,7 +40,7 @@ export const AuthProvider = ({ children }) => {
       if (token) {
         try {
           const res = await api.get('/api/auth/me');
-          setUser(res.data);
+          setUser(res.data.user || res.data);
         } catch (error) {
           console.error('Auth check failed', error);
           storage.clearToken();

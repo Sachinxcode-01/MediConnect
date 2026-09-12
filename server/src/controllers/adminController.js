@@ -1,5 +1,6 @@
 import supabase from '../config/supabase.js';
 import { localStore } from '../models/localStore.js';
+import { AuditLog } from '../models/AuditLog.js';
 
 // @desc    Get admin platform analytics & stats
 // @route   GET /api/admin/stats
@@ -123,12 +124,8 @@ export const updateUserStatus = async (req, res, next) => {
 // @access  Private (Admin)
 export const getAuditLogs = async (req, res, next) => {
   try {
-    const logs = [
-      { id: '1', action: 'PATIENT_TRIAGE_SUBMITTED', user: 'John Doe', ip: '192.168.1.10', status: 'SUCCESS', timestamp: new Date(Date.now() - 120000).toISOString() },
-      { id: '2', action: 'APPOINTMENT_SCHEDULED', user: 'Dr. Sarah Smith', ip: '192.168.1.15', status: 'SUCCESS', timestamp: new Date(Date.now() - 300000).toISOString() },
-      { id: '3', action: 'PRESCRIPTION_ISSUED', user: 'Dr. Sarah Smith', ip: '192.168.1.15', status: 'SUCCESS', timestamp: new Date(Date.now() - 600000).toISOString() },
-      { id: '4', action: 'EMR_VAULT_INTEGRITY_CHECK', user: 'SYSTEM', ip: '127.0.0.1', status: 'VERIFIED', timestamp: new Date(Date.now() - 1800000).toISOString() }
-    ];
+    const limit = parseInt(req.query.limit) || 50;
+    const logs = await AuditLog.getRecentLogs(limit);
 
     res.status(200).json({ success: true, count: logs.length, data: logs });
   } catch (error) {

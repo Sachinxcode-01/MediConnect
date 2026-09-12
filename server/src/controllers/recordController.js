@@ -82,6 +82,12 @@ export const createRecord = async (req, res, next) => {
 export const getPatientRecords = async (req, res, next) => {
   try {
     const { patientId } = req.params;
+
+    // RBAC & IDOR: Patient can only view their own records; doctor/admin can view patient records
+    if (req.user.role === 'patient' && String(req.user.id) !== String(patientId)) {
+      return res.status(403).json({ success: false, message: 'Not authorized to view another patient\'s records' });
+    }
+
     const records = await MedicalRecord.find({ patient: patientId });
     res.status(200).json({ success: true, count: records.length, data: records });
   } catch (error) {
@@ -112,6 +118,11 @@ export const getRecord = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Record not found' });
     }
 
+    const recordPatientId = record.patientId || record.patient;
+    if (req.user.role === 'patient' && String(recordPatientId) !== String(req.user.id)) {
+      return res.status(403).json({ success: false, message: 'Not authorized to access this record' });
+    }
+
     res.status(200).json({ success: true, data: record });
   } catch (error) {
     next(error);
@@ -120,13 +131,18 @@ export const getRecord = async (req, res, next) => {
 
 // @desc    Update record
 // @route   PUT /api/records/:id
-// @access  Private (Doctor)
+// @access  Private (Doctor, Admin)
 export const updateRecord = async (req, res, next) => {
   try {
     const record = await MedicalRecord.findById(req.params.id);
 
     if (!record) {
       return res.status(404).json({ success: false, message: 'Record not found' });
+    }
+
+    const recordDoctorId = record.doctorId || record.doctor;
+    if (req.user.role === 'doctor' && String(recordDoctorId) !== String(req.user.id)) {
+      return res.status(403).json({ success: false, message: 'Not authorized to modify this record' });
     }
 
     const updatedRecord = await MedicalRecord.findByIdAndUpdate(req.params.id, req.body, { new: true });
@@ -145,6 +161,11 @@ export const deleteRecord = async (req, res, next) => {
 
     if (!record) {
       return res.status(404).json({ success: false, message: 'Record not found' });
+    }
+
+    const recordDoctorId = record.doctorId || record.doctor;
+    if (req.user.role === 'doctor' && String(recordDoctorId) !== String(req.user.id)) {
+      return res.status(403).json({ success: false, message: 'Not authorized to delete this record' });
     }
 
     await record.deleteOne();
@@ -205,6 +226,11 @@ export const summarizeRecord = async (req, res, next) => {
     const record = await MedicalRecord.findById(req.params.id);
     if (!record) {
       return res.status(404).json({ success: false, message: 'Record not found' });
+    }
+
+    const recordPatientId = record.patientId || record.patient;
+    if (req.user.role === 'patient' && String(recordPatientId) !== String(req.user.id)) {
+      return res.status(403).json({ success: false, message: 'Not authorized to access this record' });
     }
 
     const summary = `Clinical Assessment of ${record.title}: Documented on ${new Date(record.createdAt).toLocaleDateString()}. Findings: ${record.description || 'Routine parameters reviewed; diagnostic values are within expected stable clinical reference intervals'}. Followup: Maintain prescribed regimen.`;

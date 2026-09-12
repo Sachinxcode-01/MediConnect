@@ -97,6 +97,9 @@ export const getUpcomingAppointments = async (req, res, next) => {
 // @desc    Get appointment by ID
 // @route   GET /api/appointments/:id
 // @access  Private
+// @desc    Get appointment by ID
+// @route   GET /api/appointments/:id
+// @access  Private
 export const getAppointment = async (req, res, next) => {
   try {
     const appointment = await Appointment.findById(req.params.id);
@@ -106,10 +109,13 @@ export const getAppointment = async (req, res, next) => {
     }
 
     // Authorization check
-    if (appointment.patient._id.toString() !== req.user.id && 
-        appointment.doctor._id.toString() !== req.user.id && 
+    const patientId = appointment.patientId || appointment.patient?.id || appointment.patient?._id || appointment.patient;
+    const doctorId = appointment.doctorId || appointment.doctor?.id || appointment.doctor?._id || appointment.doctor;
+
+    if (String(patientId) !== String(req.user.id) && 
+        String(doctorId) !== String(req.user.id) && 
         req.user.role !== 'admin') {
-      return res.status(403).json({ success: false, message: 'Not authorized' });
+      return res.status(403).json({ success: false, message: 'Not authorized to access this appointment' });
     }
 
     res.status(200).json({ success: true, data: appointment });
@@ -135,6 +141,15 @@ export const updateStatus = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Appointment not found' });
     }
 
+    const patientId = currentAppointment.patientId || currentAppointment.patient?.id || currentAppointment.patient?._id || currentAppointment.patient;
+    const doctorId = currentAppointment.doctorId || currentAppointment.doctor?.id || currentAppointment.doctor?._id || currentAppointment.doctor;
+
+    if (String(patientId) !== String(req.user.id) && 
+        String(doctorId) !== String(req.user.id) && 
+        req.user.role !== 'admin') {
+      return res.status(403).json({ success: false, message: 'Not authorized to modify this appointment' });
+    }
+
     // State machine protection: COMPLETED or CANCELLED cannot transition backwards
     if (['completed', 'cancelled'].includes(currentAppointment.status) && status === 'scheduled') {
       return res.status(400).json({ success: false, message: `Cannot revert ${currentAppointment.status} appointment to scheduled` });
@@ -158,11 +173,24 @@ export const cancelAppointment = async (req, res, next) => {
   try {
     const { reason } = req.body;
 
+    const currentAppointment = await Appointment.findById(req.params.id);
+    if (!currentAppointment) {
+      return res.status(404).json({ success: false, message: 'Appointment not found' });
+    }
+
+    const patientId = currentAppointment.patientId || currentAppointment.patient?.id || currentAppointment.patient?._id || currentAppointment.patient;
+    const doctorId = currentAppointment.doctorId || currentAppointment.doctor?.id || currentAppointment.doctor?._id || currentAppointment.doctor;
+
+    if (String(patientId) !== String(req.user.id) && 
+        String(doctorId) !== String(req.user.id) && 
+        req.user.role !== 'admin') {
+      return res.status(403).json({ success: false, message: 'Not authorized to cancel this appointment' });
+    }
+
     const appointment = await Appointment.findByIdAndUpdate(
       req.params.id,
-      { status: 'cancelled', cancellationReason: reason || '' },
-      { new: true }
-    ).populate('patient', 'name email').populate('doctor', 'name specialty');
+      { status: 'cancelled', cancellationReason: reason || '' }
+    );
 
     res.status(200).json({ success: true, data: appointment });
   } catch (error) {
@@ -182,8 +210,12 @@ export const joinRoom = async (req, res, next) => {
     }
 
     // Authorization check
-    if (appointment.patient.toString() !== req.user.id && 
-        appointment.doctor.toString() !== req.user.id) {
+    const patientId = appointment.patientId || appointment.patient?.id || appointment.patient?._id || appointment.patient;
+    const doctorId = appointment.doctorId || appointment.doctor?.id || appointment.doctor?._id || appointment.doctor;
+
+    if (String(patientId) !== String(req.user.id) && 
+        String(doctorId) !== String(req.user.id) &&
+        req.user.role !== 'admin') {
       return res.status(403).json({ success: false, message: 'Not authorized' });
     }
 

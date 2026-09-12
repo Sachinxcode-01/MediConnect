@@ -4,7 +4,7 @@ import {
   Activity, Clock, FileText, HeartPulse, Video, 
   Sparkles, Loader2, X, AlertTriangle, Mic, MicOff, 
   Calendar, ShieldCheck, Stethoscope, 
-  Thermometer
+  Thermometer, Zap
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../api/axios';

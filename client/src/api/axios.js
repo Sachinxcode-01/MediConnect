@@ -39,8 +39,15 @@ api.interceptors.response.use(
 
     const originalRequest = error.config;
 
-    // Handle 401 Unauthorized - token expired or invalid
-    if (error.response.status === 401 && !originalRequest._retry) {
+    // Handle 401 Unauthorized - token expired or invalid (skip for authentication endpoints)
+    const isAuthEndpoint = originalRequest?.url?.includes('/api/auth/login') ||
+      originalRequest?.url?.includes('/api/auth/register') ||
+      originalRequest?.url?.includes('/api/auth/verify') ||
+      originalRequest?.url?.includes('/api/auth/forgot') ||
+      originalRequest?.url?.includes('/api/auth/reset') ||
+      originalRequest?.url?.includes('/api/auth/refresh');
+
+    if (error.response.status === 401 && !originalRequest._retry && !isAuthEndpoint) {
       originalRequest._retry = true;
       try {
         const res = await axios.post(
@@ -48,12 +55,16 @@ api.interceptors.response.use(
           {},
           { withCredentials: true }
         );
-        localStorage.setItem('accessToken', res.data.accessToken);
-        originalRequest.headers.Authorization = `Bearer ${res.data.accessToken}`;
-        return api(originalRequest);
+        if (res.data?.accessToken) {
+          localStorage.setItem('accessToken', res.data.accessToken);
+          originalRequest.headers.Authorization = `Bearer ${res.data.accessToken}`;
+          return api(originalRequest);
+        }
       } catch (refreshError) {
         localStorage.removeItem('accessToken');
-        window.location.href = '/login';
+        if (window.location.pathname !== '/login') {
+          window.location.href = '/login';
+        }
         return Promise.reject(refreshError);
       }
     }
