@@ -14,27 +14,32 @@ const simulatedPharmacies = [
 // @access  Private
 export const findNearbyPharmacies = async (req, res, next) => {
   try {
-    const lat = req.query.lat || req.body.lat;
-    const lng = req.query.lng || req.body.lng;
-    const radius = req.query.radius || req.body.radius || 5;
-    const limit = req.query.limit || req.body.limit || 10;
+    const lat = parseFloat(req.query.lat || req.body.lat) || 40.7128;
+    const lng = parseFloat(req.query.lng || req.body.lng) || -74.0060;
+    const limit = parseInt(req.query.limit || req.body.limit) || 10;
 
-    // In production, use Google Places API:
-    // const response = await axios.get('https://maps.googleapis.com/maps/api/place/nearbysearch/json', {
-    //   params: { location: `${lat},${lng}`, radius: radius * 1000, type: 'pharmacy', key: process.env.GOOGLE_MAPS_KEY }
-    // });
+    const offsets = [
+      { dLat: 0.0045, dLng: 0.0062 },
+      { dLat: -0.0072, dLng: -0.0054 },
+      { dLat: 0.0115, dLng: -0.0098 },
+      { dLat: -0.0132, dLng: 0.0125 },
+      { dLat: 0.0088, dLng: -0.0165 }
+    ];
 
-    // For demo, return simulated pharmacies
-    let pharmacies = [...simulatedPharmacies];
-    
+    let pharmacies = simulatedPharmacies.slice(0, limit).map((p, idx) => {
+      const offset = offsets[idx % offsets.length];
+      return {
+        ...p,
+        lat: lat + offset.dLat,
+        lng: lng + offset.dLng
+      };
+    });
+
     // Filter by services if provided
     if (req.query.services) {
       const services = req.query.services.split(',');
       pharmacies = pharmacies.filter(p => services.every(s => p.services.includes(s)));
     }
-
-    // Sort by distance and limit results
-    pharmacies = pharmacies.slice(0, parseInt(limit));
 
     res.status(200).json({ success: true, count: pharmacies.length, data: pharmacies });
   } catch (error) {

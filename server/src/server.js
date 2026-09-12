@@ -10,7 +10,7 @@ import { createServer } from 'http';
 import { Server } from 'socket.io';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import supabase from './config/supabase.js';
+import supabase, { checkSupabaseConnection } from './config/supabase.js';
 import errorHandler from './middleware/errorHandler.js';
 import { apiLimiter } from './middleware/rateLimiter.js';
 import { initializeSocket } from './socket/socketHandler.js';
@@ -38,15 +38,8 @@ dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Test Supabase connection
-(async () => {
-  const { error } = await supabase.from('users').select('id').limit(1);
-  if (error) {
-    console.error('❌ Supabase connection failed:', error.message);
-  } else {
-    console.log('✅ Supabase connected successfully');
-  }
-})();
+// Verify database connection state
+checkSupabaseConnection().catch(() => {});
 
 // Initialize express app
 const app = express();

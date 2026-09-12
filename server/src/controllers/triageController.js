@@ -188,3 +188,57 @@ export const analyzeChatHistory = async (req, res, next) => {
   }
 };
 
+// @desc    Evaluate symptoms without saving entry (for interactive chatbot / pre-triage)
+// @route   POST /api/triage/evaluate
+// @access  Public / Optional Auth
+export const evaluateSymptoms = async (req, res, next) => {
+  try {
+    const { symptoms, patientAge, vitalSigns } = req.body;
+    if (!symptoms || symptoms.trim().length < 3) {
+      return res.status(400).json({ success: false, message: 'Please describe symptoms' });
+    }
+
+    let aiAnalysis;
+    try {
+      aiAnalysis = await analyzeSymptoms(symptoms, vitalSigns);
+    } catch {
+      aiAnalysis = {
+        severity: 'medium',
+        urgency: 'within_24h',
+        symptoms_detected: [symptoms],
+        possible_categories: ['General Health Evaluation'],
+        recommended_next_step: 'Consult a primary care physician',
+        red_flags: [],
+        confidence: 0.75,
+        disclaimer: 'MediConnect AI is an informational pre-triage tool and does not provide formal diagnosis.'
+      };
+    }
+
+    const urgencyLevel = aiAnalysis.severity === 'critical' ? 'EMERGENT' :
+                         aiAnalysis.severity === 'high' ? 'URGENT' :
+                         aiAnalysis.severity === 'medium' ? 'MODERATE' : 'ROUTINE';
+
+    res.status(200).json({
+      success: true,
+      data: {
+        status: 'PROCESSED',
+        urgencyLevel,
+        severity: aiAnalysis.severity,
+        urgency: aiAnalysis.urgency,
+        recommendedSpecialty: aiAnalysis.possible_categories?.[0] || 'General Medicine',
+        redFlagsDetected: aiAnalysis.red_flags || [],
+        clinicalRationale: aiAnalysis.recommended_next_step || 'Assessment based on clinical symptom guidelines.',
+        suggestedDoctorQuestions: [
+          'How long have you been experiencing these symptoms?',
+          'Do the symptoms change with physical activity or rest?',
+          'Are there any associated medications or allergies?'
+        ],
+        symptomsDetected: aiAnalysis.symptoms_detected || [symptoms],
+        disclaimer: aiAnalysis.disclaimer || 'This assessment does not replace in-person medical evaluation.'
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+

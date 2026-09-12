@@ -7,12 +7,14 @@ import {
   assignDoctor, 
   addNote, 
   updateStatus,
-  analyzeChatHistory
+  analyzeChatHistory,
+  evaluateSymptoms
 } from '../controllers/triageController.js';
-import { protect, authorize } from '../middleware/auth.js';
+import { protect, authorize, optionalAuth } from '../middleware/auth.js';
 
 const router = express.Router();
 
+router.post('/evaluate', optionalAuth, evaluateSymptoms);
 router.post('/', protect, authorize('patient', 'doctor'), submitTriage);
 router.post('/analyze', protect, authorize('doctor'), analyzeChatHistory);
 router.get('/', protect, getTriageHistory);

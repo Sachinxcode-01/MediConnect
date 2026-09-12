@@ -10,7 +10,12 @@ let supabaseOnline = false;
 let lastCheckTime = 0;
 const CHECK_INTERVAL_MS = 60000; // 1 minute
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: { persistSession: false },
+  global: {
+    fetch: (url, options = {}) => fetch(url, { ...options, signal: AbortSignal.timeout(2000) })
+  }
+});
 
 export const isSupabaseOnline = () => {
   return supabaseOnline;
@@ -24,13 +29,12 @@ export const checkSupabaseConnection = async () => {
   lastCheckTime = now;
 
   try {
-    const timeoutPromise = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error('Supabase ping timeout')), 2500)
-    );
-    const checkPromise = supabase.from('users').select('id').limit(1);
-
-    const { error } = await Promise.race([checkPromise, timeoutPromise]);
-    supabaseOnline = !error;
+    const res = await fetch(`${supabaseUrl}/rest/v1/`, {
+      method: 'GET',
+      headers: { apikey: supabaseAnonKey },
+      signal: AbortSignal.timeout(1500)
+    });
+    supabaseOnline = res.ok || res.status === 401;
     if (supabaseOnline) {
       console.log('✅ Supabase connected successfully');
     } else {

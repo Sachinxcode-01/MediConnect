@@ -64,7 +64,9 @@ const PharmacyFinder = () => {
     setLoading(true);
     try {
       const res = await api.post('/api/pharmacy/nearby', { lat, lng });
-      const pharmaciesWithDistance = res.data.map((pharm) => ({
+      const rawList = res.data?.data || res.data;
+      const list = Array.isArray(rawList) ? rawList : [];
+      const pharmaciesWithDistance = list.map((pharm) => ({
         ...pharm,
         distance: calculateDistance(lat, lng, pharm.lat, pharm.lng),
       }));

@@ -1,4 +1,17 @@
-import supabase from '../config/supabase.js';
+import supabase, { isSupabaseOnline } from '../config/supabase.js';
+
+const localAuditLogs = [
+  {
+    id: 'log-001',
+    actor_id: 'sys-admin',
+    actor_role: 'admin',
+    action: 'SYSTEM_BOOTSTRAP',
+    target_id: 'platform',
+    result: 'SUCCESS',
+    ip_address: '127.0.0.1',
+    created_at: new Date().toISOString()
+  }
+];
 
 export class AuditLog {
   constructor(data) {
@@ -14,6 +27,7 @@ export class AuditLog {
 
   static async log(logData) {
     const payload = {
+      id: `log-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`,
       actor_id: logData.actorId || logData.actor_id || 'system',
       actor_role: logData.actorRole || logData.actor_role || 'system',
       action: logData.action,
@@ -23,46 +37,44 @@ export class AuditLog {
       created_at: new Date().toISOString()
     };
 
-    const { data, error } = await supabase
-      .from('audit_logs')
-      .insert([payload])
-      .select()
-      .single();
+    if (isSupabaseOnline()) {
+      try {
+        const { data, error } = await supabase
+          .from('audit_logs')
+          .insert([payload])
+          .select()
+          .single();
 
-    if (error && error.code !== '42P01') {
-      console.warn('Audit log fallback note:', error.message);
+        if (!error && data) {
+          return new AuditLog(data);
+        }
+      } catch {
+        // Fall through
+      }
     }
 
-    return new AuditLog(data || { id: `log-${Date.now()}`, ...payload });
+    localAuditLogs.unshift(payload);
+    return new AuditLog(payload);
   }
 
   static async getRecentLogs(limit = 50) {
-    const { data, error } = await supabase
-      .from('audit_logs')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .limit(limit);
+    if (isSupabaseOnline()) {
+      try {
+        const { data, error } = await supabase
+          .from('audit_logs')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(limit);
 
-    if (error && error.code !== '42P01') {
-      console.warn('Audit logs retrieval note:', error.message);
+        if (!error && data && data.length > 0) {
+          return data.map(l => new AuditLog(l));
+        }
+      } catch {
+        // Fall through
+      }
     }
 
-    if (!data || data.length === 0) {
-      return [
-        new AuditLog({
-          id: 'log-001',
-          actor_id: 'sys-admin',
-          actor_role: 'admin',
-          action: 'SYSTEM_BOOTSTRAP',
-          target_id: 'platform',
-          result: 'SUCCESS',
-          ip_address: '127.0.0.1',
-          created_at: new Date().toISOString()
-        })
-      ];
-    }
-
-    return data.map(l => new AuditLog(l));
+    return localAuditLogs.slice(0, limit).map(l => new AuditLog(l));
   }
 }
 

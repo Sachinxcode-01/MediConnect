@@ -46,12 +46,17 @@ app.use(errorHandler);
 
 const TEST_PORT = 5099;
 
-httpServer.listen(TEST_PORT, async () => {
+httpServer.on('error', (err) => {
+  console.error('HTTP Server Listen Error:', err);
+  process.exit(1);
+});
+
+httpServer.listen(TEST_PORT, '127.0.0.1', async () => {
   console.log(`\n==================================================`);
   console.log(`🏥 MediConnect Comprehensive E2E Test Suite Starting...`);
   console.log(`==================================================\n`);
 
-  const baseUrl = `http://localhost:${TEST_PORT}/api`;
+  const baseUrl = `http://127.0.0.1:${TEST_PORT}/api`;
 
   const cleanupAndExit = (code = 0) => {
     if (httpServer.closeAllConnections) {
