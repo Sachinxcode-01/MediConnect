@@ -28,6 +28,23 @@ export const createAppointment = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'End time must be after start time' });
     }
 
+    if (start < new Date(Date.now() - 60000)) {
+      return res.status(400).json({ success: false, message: 'Cannot schedule appointment in the past' });
+    }
+
+    // Double-booking & schedule conflict prevention
+    const existingAppointments = await Appointment.find({ doctor: targetDoctorId });
+    const hasConflict = existingAppointments?.some(apt => {
+      if (apt.status === 'cancelled') return false;
+      const aptStart = new Date(apt.startTime).getTime();
+      const aptEnd = new Date(apt.endTime).getTime();
+      return (start.getTime() < aptEnd && end.getTime() > aptStart);
+    });
+
+    if (hasConflict) {
+      return res.status(409).json({ success: false, message: 'Doctor is already booked for this time slot. Please choose another time.' });
+    }
+
     const appointment = await Appointment.create({
       patient: targetPatientId,
       doctor: targetDoctorId,

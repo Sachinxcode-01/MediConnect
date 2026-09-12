@@ -1,5 +1,3 @@
-import fetch from 'node-fetch';
-
 async function verifyAPI() {
   console.log('🔍 Starting MediConnect Health Check...');
   const backendUrl = 'http://localhost:5000/api';

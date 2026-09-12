@@ -181,5 +181,6 @@ process.on('unhandledRejection', (err) => {
   httpServer.close(() => process.exit(1));
 });
 
-export { io };
+export { app, io };
+export default app;
 

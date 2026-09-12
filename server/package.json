@@ -9,7 +9,7 @@
     "dev:ts": "tsx watch src/server.ts",
     "build": "tsc",
     "start": "node src/server.js",
-    "seed": "node src/utils/seed.js",
+    "seed": "node seedSupabase.js",
     "test:keys": "node test_keys_prd.js",
     "test:e2e": "node test_e2e.js"
   },
